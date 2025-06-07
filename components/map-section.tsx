@@ -4,11 +4,9 @@ import { useState, useCallback, useEffect } from "react";
 import { Search, MapPin } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { GoogleMap, LoadScript, Marker } from "@react-google-maps/api";
+import { useLoadScript, GoogleMap, Marker } from "@react-google-maps/api";
 
-const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
-
-// David, Chiriquí coordinates
+// David, Chiriquí coordinates (fallback)
 const DEFAULT_CENTER = {
   lat: 8.4273,
   lng: -82.4308,
@@ -19,7 +17,7 @@ const mapContainerStyle = {
   height: "100%",
 };
 
-const libraries: "places"[] = ["places"];
+const libraries: ["places"] = ["places"];
 
 interface MapSectionProps {
   selectedAddress: string;
@@ -36,6 +34,52 @@ export function MapSection({
   const [map, setMap] = useState<google.maps.Map | null>(null);
   const [searchBox, setSearchBox] =
     useState<google.maps.places.SearchBox | null>(null);
+  const [isLocating, setIsLocating] = useState(true);
+
+  const { isLoaded, loadError } = useLoadScript({
+    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "",
+    libraries,
+  });
+
+  // Get user's current location on component mount
+  useEffect(() => {
+    if (!isLoaded) return;
+
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const userLocation = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          };
+          setCenter(userLocation);
+          setMarkerPosition(userLocation);
+
+          // Reverse geocode to get address
+          const geocoder = new google.maps.Geocoder();
+          geocoder.geocode({ location: userLocation }, (results, status) => {
+            if (status === "OK" && results?.[0]) {
+              const address = results[0].formatted_address;
+              setSearchValue(address);
+              onAddressSelect(address);
+            }
+          });
+          setIsLocating(false);
+        },
+        (error) => {
+          console.error("Error getting location:", error);
+          setIsLocating(false);
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 5000,
+          maximumAge: 0,
+        }
+      );
+    } else {
+      setIsLocating(false);
+    }
+  }, [isLoaded, onAddressSelect]);
 
   const onLoad = useCallback((map: google.maps.Map) => {
     setMap(map);
@@ -105,27 +149,44 @@ export function MapSection({
     };
   }, [searchBox, map, onAddressSelect]);
 
+  if (loadError) {
+    return (
+      <div className="h-80 md:h-96 flex items-center justify-center bg-gray-100">
+        <p className="text-red-500">Error loading maps</p>
+      </div>
+    );
+  }
+
+  if (!isLoaded || isLocating) {
+    return (
+      <div className="h-80 md:h-96 flex items-center justify-center bg-gray-100">
+        <p>{isLocating ? "Localizando tu ubicación..." : "Loading maps..."}</p>
+      </div>
+    );
+  }
+
   return (
     <div className="relative">
       {/* Map Container */}
       <div className="h-80 md:h-96 relative overflow-hidden">
-        <LoadScript
-          googleMapsApiKey={GOOGLE_MAPS_API_KEY}
-          libraries={libraries}
+        <GoogleMap
+          mapContainerStyle={mapContainerStyle}
+          center={center}
+          zoom={17} // Increased zoom level for better initial view
+          onLoad={onLoad}
+          options={{
+            zoomControl: true,
+            streetViewControl: false,
+            mapTypeControl: false,
+            fullscreenControl: false,
+          }}
         >
-          <GoogleMap
-            mapContainerStyle={mapContainerStyle}
-            center={center}
-            zoom={15}
-            onLoad={onLoad}
-          >
-            <Marker
-              position={markerPosition}
-              draggable={true}
-              onDragEnd={onMarkerDragEnd}
-            />
-          </GoogleMap>
-        </LoadScript>
+          <Marker
+            position={markerPosition}
+            draggable={true}
+            onDragEnd={onMarkerDragEnd}
+          />
+        </GoogleMap>
 
         {/* Search Bar Overlay */}
         <div className="absolute top-4 left-4 right-4 z-10">
