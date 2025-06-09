@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { Search, MapPin, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -22,7 +22,16 @@ const libraries: ["places"] = ["places"];
 
 interface MapSectionProps {
   selectedAddress: string;
-  onAddressSelect: (address: string) => void;
+  onAddressSelect: (
+    address: string,
+    details?: {
+      provincia?: string;
+      distrito?: string;
+      calle?: string;
+      zona?: string;
+      numero?: string;
+    }
+  ) => void;
 }
 
 export function MapSection({
@@ -32,14 +41,15 @@ export function MapSection({
   const [searchValue, setSearchValue] = useState("");
   const [center, setCenter] = useState(DEFAULT_CENTER);
   const [map, setMap] = useState<google.maps.Map | null>(null);
-  const [searchBox, setSearchBox] =
-    useState<google.maps.places.SearchBox | null>(null);
   const [isLocating, setIsLocating] = useState(true);
   const [isUpdatingAddress, setIsUpdatingAddress] = useState(false);
   const [predictions, setPredictions] = useState<
     google.maps.places.AutocompletePrediction[]
   >([]);
   const [showPredictions, setShowPredictions] = useState(false);
+
+  // Use a ref to track if we should update the center
+  const shouldUpdateCenter = useRef(true);
 
   const { isLoaded, loadError } = useLoadScript({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "",
@@ -58,16 +68,12 @@ export function MapSection({
             lng: position.coords.longitude,
           };
           setCenter(userLocation);
+          shouldUpdateCenter.current = true;
 
-          // Reverse geocode to get address
-          const geocoder = new google.maps.Geocoder();
-          geocoder.geocode({ location: userLocation }, (results, status) => {
-            if (status === "OK" && results?.[0]) {
-              const address = results[0].formatted_address;
-              setSearchValue(address);
-              onAddressSelect(address);
-            }
-          });
+          if (map) {
+            map.setCenter(userLocation);
+            updateAddressFromCoordinates(userLocation.lat, userLocation.lng);
+          }
           setIsLocating(false);
         },
         (error) => {
@@ -83,18 +89,56 @@ export function MapSection({
     } else {
       setIsLocating(false);
     }
-  }, [isLoaded, onAddressSelect]);
+  }, [isLoaded, map]);
+
+  const parseAddressComponents = (results: google.maps.GeocoderResult[]) => {
+    const addressComponents = results[0].address_components;
+    const details: { [key: string]: string } = {};
+
+    for (const component of addressComponents) {
+      const types = component.types;
+
+      if (types.includes("administrative_area_level_1")) {
+        details.provincia = component.long_name;
+      }
+      if (
+        types.includes("locality") ||
+        types.includes("administrative_area_level_2")
+      ) {
+        details.distrito = component.long_name;
+      }
+      if (types.includes("route")) {
+        details.calle = component.long_name;
+      }
+      if (types.includes("sublocality") || types.includes("neighborhood")) {
+        details.zona = component.long_name;
+      }
+      if (types.includes("street_number")) {
+        details.numero = component.long_name;
+      }
+    }
+
+    return details;
+  };
 
   const onLoad = useCallback((map: google.maps.Map) => {
     setMap(map);
 
     // Update address when map stops moving
     map.addListener("idle", () => {
-      const center = map.getCenter();
-      if (center) {
-        const lat = center.lat();
-        const lng = center.lng();
-        updateAddressFromCoordinates(lat, lng);
+      if (!shouldUpdateCenter.current) {
+        shouldUpdateCenter.current = true;
+        return;
+      }
+
+      const mapCenter = map.getCenter();
+      if (mapCenter) {
+        const newCenter = {
+          lat: mapCenter.lat(),
+          lng: mapCenter.lng(),
+        };
+        setCenter(newCenter);
+        updateAddressFromCoordinates(newCenter.lat, newCenter.lng);
       }
     });
   }, []);
@@ -145,7 +189,7 @@ export function MapSection({
       placesService.getDetails(
         {
           placeId: prediction.place_id,
-          fields: ["geometry", "formatted_address"],
+          fields: ["geometry", "formatted_address", "address_components"],
         },
         (place, status) => {
           if (
@@ -156,11 +200,31 @@ export function MapSection({
               lat: place.geometry.location.lat(),
               lng: place.geometry.location.lng(),
             };
+
+            shouldUpdateCenter.current = true;
             setCenter(newPos);
             map.setCenter(newPos);
+
             if (place.formatted_address) {
               setSearchValue(place.formatted_address);
-              onAddressSelect(place.formatted_address);
+              if (place.address_components) {
+                const details = parseAddressComponents([
+                  {
+                    address_components: place.address_components,
+                    formatted_address: place.formatted_address,
+                    geometry: {
+                      location: place.geometry.location,
+                      viewport: place.geometry.viewport,
+                      // location_type is omitted because it's not available from PlaceGeometry
+                    } as unknown as google.maps.GeocoderGeometry,
+                    place_id: place.place_id!,
+                    types: [],
+                  },
+                ]);
+                onAddressSelect(place.formatted_address, details);
+              } else {
+                onAddressSelect(place.formatted_address);
+              }
             }
           }
         }
@@ -170,7 +234,7 @@ export function MapSection({
     [map, onAddressSelect]
   );
 
-  // Debounced function to update address from coordinates
+  // Function to update address from coordinates
   const updateAddressFromCoordinates = useCallback(
     (lat: number, lng: number) => {
       if (isUpdatingAddress) return;
@@ -181,7 +245,8 @@ export function MapSection({
         if (status === "OK" && results?.[0]) {
           const address = results[0].formatted_address;
           setSearchValue(address);
-          onAddressSelect(address);
+          const details = parseAddressComponents(results);
+          onAddressSelect(address, details);
         }
         setTimeout(() => setIsUpdatingAddress(false), 500);
       });
@@ -257,7 +322,6 @@ export function MapSection({
                 )}
               </div>
 
-              {/* Predictions Dropdown */}
               {/* Predictions Dropdown */}
               {showPredictions && predictions.length > 0 && (
                 <div className="absolute w-full bg-white shadow-lg rounded-b-lg border-t">
