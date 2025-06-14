@@ -39,6 +39,7 @@ export function MapSection({
   onAddressSelect,
 }: MapSectionProps) {
   const [searchValue, setSearchValue] = useState("");
+  const [displayAddress, setDisplayAddress] = useState("");
   const [center, setCenter] = useState(DEFAULT_CENTER);
   const [map, setMap] = useState<google.maps.Map | null>(null);
   const [isLocating, setIsLocating] = useState(true);
@@ -47,9 +48,11 @@ export function MapSection({
     google.maps.places.AutocompletePrediction[]
   >([]);
   const [showPredictions, setShowPredictions] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
   // Use a ref to track if we should update the center
   const shouldUpdateCenter = useRef(true);
+  const isUserTyping = useRef(false);
 
   const { isLoaded, loadError } = useLoadScript({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "",
@@ -124,6 +127,17 @@ export function MapSection({
   const onLoad = useCallback((map: google.maps.Map) => {
     setMap(map);
 
+    // Add drag start listener
+    map.addListener("dragstart", () => {
+      setIsDragging(true);
+      setShowPredictions(false);
+    });
+
+    // Add drag end listener
+    map.addListener("dragend", () => {
+      setIsDragging(false);
+    });
+
     // Update address when map stops moving
     map.addListener("idle", () => {
       if (!shouldUpdateCenter.current) {
@@ -146,6 +160,7 @@ export function MapSection({
   // Handle search input changes
   const handleSearchChange = useCallback(
     (value: string) => {
+      isUserTyping.current = true;
       setSearchValue(value);
       if (!value) {
         setPredictions([]);
@@ -160,7 +175,6 @@ export function MapSection({
           {
             input: value,
             componentRestrictions: { country: "pa" }, // Restrict to Panama
-            // types: ["establishment", "geocode"],
           },
           (predictions, status) => {
             if (
@@ -215,7 +229,6 @@ export function MapSection({
                     geometry: {
                       location: place.geometry.location,
                       viewport: place.geometry.viewport,
-                      // location_type is omitted because it's not available from PlaceGeometry
                     } as unknown as google.maps.GeocoderGeometry,
                     place_id: place.place_id!,
                     types: [],
@@ -230,6 +243,7 @@ export function MapSection({
         }
       );
       setShowPredictions(false);
+      isUserTyping.current = false;
     },
     [map, onAddressSelect]
   );
@@ -237,7 +251,7 @@ export function MapSection({
   // Function to update address from coordinates
   const updateAddressFromCoordinates = useCallback(
     (lat: number, lng: number) => {
-      if (isUpdatingAddress) return;
+      if (isUpdatingAddress || isUserTyping.current) return;
       setIsUpdatingAddress(true);
 
       const geocoder = new google.maps.Geocoder();
@@ -248,11 +262,19 @@ export function MapSection({
           const details = parseAddressComponents(results);
           onAddressSelect(address, details);
         }
-        setTimeout(() => setIsUpdatingAddress(false), 500);
+        setIsUpdatingAddress(false);
       });
     },
-    [onAddressSelect, isUpdatingAddress]
+    [isUpdatingAddress, onAddressSelect]
   );
+
+  // Handle input blur
+  const handleInputBlur = useCallback(() => {
+    // Small delay to allow for prediction selection
+    setTimeout(() => {
+      isUserTyping.current = false;
+    }, 200);
+  }, []);
 
   if (loadError) {
     return (
@@ -271,7 +293,7 @@ export function MapSection({
   }
 
   return (
-    <div className="relative">
+    <div className="relative h-[50vh] w-full">
       {/* Map Container */}
       <div className="h-80 md:h-96 relative overflow-hidden">
         <GoogleMap
@@ -297,68 +319,45 @@ export function MapSection({
         </GoogleMap>
 
         {/* Search Bar Overlay */}
-        <div className="absolute top-4 left-4 z-10 w-full max-w-md">
+        <div className="absolute top-4 left-4 right-4 z-10">
           <div className="relative">
-            <div className="relative">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  type="text"
-                  value={searchValue}
-                  onChange={(e) => handleSearchChange(e.target.value)}
-                  className="pl-10 pr-10 bg-white shadow-lg border-0 h-12 text-sm rounded-t-lg"
-                  placeholder="Ingresa tu dirección o ingresa una ubicación cercana"
-                  onFocus={() => setShowPredictions(true)}
-                />
-                {searchValue && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="absolute right-2 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0"
-                    onClick={() => {
-                      setSearchValue("");
-                      setPredictions([]);
-                      setShowPredictions(false);
-                    }}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                )}
-              </div>
-
-              {/* Predictions Dropdown */}
-              {showPredictions && predictions.length > 0 && (
-                <div className="absolute w-full bg-white shadow-lg rounded-b-lg border-t">
-                  {predictions.map((prediction) => (
-                    <button
-                      key={prediction.place_id}
-                      className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-start"
-                      onClick={() => handlePredictionSelect(prediction)}
-                    >
-                      <MapPin className="h-4 w-4 mt-1 mr-2 flex-shrink-0" />
-                      <div>
-                        <div className="font-medium">
-                          {prediction.structured_formatting.main_text}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          {prediction.structured_formatting.secondary_text}
-                        </div>
-                      </div>
-                    </button>
-                  ))}
-
-                  {/* Powered by Google — only shown when dropdown is visible */}
-                  <div className="px-4 py-2 border-t bg-white flex justify-end">
-                    <img
-                      src="https://maps.gstatic.com/mapfiles/api-3/images/powered-by-google-on-white3.png"
-                      alt="Powered by Google"
-                      className="h-3"
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
+            <Input
+              type="text"
+              placeholder="Buscar dirección..."
+              value={searchValue}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              onBlur={handleInputBlur}
+              className="w-full pl-10 pr-4 py-2 bg-white rounded-lg shadow-md"
+            />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            {searchValue && (
+              <button
+                onClick={() => {
+                  setSearchValue("");
+                  setPredictions([]);
+                  setShowPredictions(false);
+                }}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
           </div>
+
+          {/* Predictions Dropdown */}
+          {showPredictions && !isDragging && predictions.length > 0 && (
+            <div className="absolute w-full mt-1 bg-white rounded-lg shadow-lg max-h-60 overflow-y-auto z-20">
+              {predictions.map((prediction) => (
+                <button
+                  key={prediction.place_id}
+                  onClick={() => handlePredictionSelect(prediction)}
+                  className="w-full px-4 py-2 text-left hover:bg-gray-100 text-sm"
+                >
+                  {prediction.description}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
