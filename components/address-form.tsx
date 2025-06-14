@@ -34,24 +34,18 @@ export function AddressForm({
     new Set()
   );
 
-  // Track which fields were auto-filled from the map
   useEffect(() => {
     const newAutoFilledFields = new Set<string>();
-
     Object.entries(formData).forEach(([key, value]) => {
       if (value && key !== "additionalInfo" && key !== "codigoPostal") {
         newAutoFilledFields.add(key);
       }
     });
-
     setAutoFilledFields(newAutoFilledFields);
   }, [formData]);
 
   const handleInputChange = (field: keyof AddressFormData, value: string) => {
-    setFormData({
-      ...formData,
-      [field]: value,
-    });
+    setFormData({ ...formData, [field]: value });
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -67,17 +61,17 @@ export function AddressForm({
     const isAutoFilled = autoFilledFields.has(field);
 
     return (
-      <div className="space-y-2">
+      <div className="space-y-1">
         <div className="flex items-center justify-between">
-          <Label htmlFor={field} className="text-sm font-medium text-gray-700">
+          <Label htmlFor={field} className="text-xs font-medium text-gray-700">
             {label}
           </Label>
           {isAutoFilled && (
             <Badge
               variant="outline"
-              className="text-xs bg-blue-50 text-blue-600 border-blue-200"
+              className="text-[10px] px-2 py-0.5 bg-blue-50 text-blue-600 border-blue-200"
             >
-              Auto-completado
+              Auto
             </Badge>
           )}
         </div>
@@ -85,7 +79,7 @@ export function AddressForm({
           id={field}
           value={formData[field]}
           onChange={(e) => handleInputChange(field, e.target.value)}
-          className={`bg-gray-50 border-gray-200 ${
+          className={`h-8 text-sm bg-gray-50 border-gray-200 ${
             isAutoFilled ? "border-blue-200 bg-blue-50" : ""
           }`}
           placeholder={placeholder}
@@ -95,21 +89,20 @@ export function AddressForm({
   };
 
   return (
-    <div className="container mx-auto px-4 py-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg font-semibold text-gray-900">
-            Por favor completa o verifica los detalles de tu dirección:
+    <div className="container mx-auto px-2 py-4 max-w-md sm:max-w-lg md:max-w-full">
+      <Card className="p-2">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base font-semibold text-gray-900">
+            Verifica tu dirección:
           </CardTitle>
         </CardHeader>
 
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Additional Information */}
-            <div className="space-y-2">
+        <CardContent className="space-y-3">
+          <form onSubmit={handleSubmit} className="space-y-3 text-sm">
+            <div className="space-y-1">
               <Label
                 htmlFor="additionalInfo"
-                className="text-sm font-medium text-gray-700"
+                className="text-xs font-medium text-gray-700"
               >
                 Información adicional
               </Label>
@@ -119,32 +112,26 @@ export function AddressForm({
                 onChange={(e) =>
                   handleInputChange("additionalInfo", e.target.value)
                 }
-                placeholder="Puedes agregar cualquier información adicional que nos pueda servir para llegar más rápido (entre qué calles está, alguna referencia, etc.)"
-                className="min-h-20 bg-gray-50 border-gray-200 resize-none"
-                rows={3}
+                placeholder="Referencias, puntos cercanos, entre calles..."
+                className="resize-none h-16 text-sm bg-gray-50 border-gray-200"
               />
             </div>
 
-            {/* Address Fields Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {renderField("provincia", "Provincia", "Provincia de Chiriquí")}
-              {renderField("distrito", "Distrito", "Distrito de David")}
-              {renderField("calle", "Calle", "3ra Oeste")}
-              {renderField("zona", "Zona", "David")}
-              {renderField("numero", "Número", "335-12")}
-              {renderField("codigoPostal", "Código Postal", "Código Postal")}
+            <div className="grid grid-cols-2 gap-2">
+              {renderField("provincia", "Provincia", "Ej: Chiriquí")}
+              {renderField("distrito", "Distrito", "Ej: David")}
+              {renderField("calle", "Calle", "Ej: 3ra Oeste")}
+              {renderField("zona", "Zona", "Ej: David")}
+              {renderField("numero", "Número", "Ej: 335-12")}
+              {renderField("codigoPostal", "Código Postal", "")}
             </div>
 
-            {/* Submit Button */}
-            <div className="pt-4">
-              <Button
-                type="submit"
-                className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 text-lg"
-                size="lg"
-              >
-                CONFIRMAR DIRECCIÓN
-              </Button>
-            </div>
+            <Button
+              type="submit"
+              className="w-full bg-red-600 hover:bg-red-700 text-white text-sm py-2"
+            >
+              CONFIRMAR DIRECCIÓN
+            </Button>
           </form>
         </CardContent>
       </Card>
