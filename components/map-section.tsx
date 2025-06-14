@@ -288,7 +288,11 @@ export function MapSection({
         >
           {/* Center Marker */}
           <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-full pointer-events-none z-50">
-            <MapPin className="h-8 w-8 text-red-600" />
+            <img
+              src="/assets/icons/Map-pin.svg"
+              alt="Map Pin"
+              className="h-9 w-9"
+            />
           </div>
         </GoogleMap>
 
