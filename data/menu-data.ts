@@ -178,14 +178,22 @@ export const menu: MenuCategory[] = [
       {
         name: "BATIDOS",
         description: "Fresa, piña, melón.",
-        prices: [{ label: "", value: 2.75 }],
+        prices: [
+          { label: "Fresa", value: 2.75 },
+          { label: "Piña", value: 2.75 },
+          { label: "Melón", value: 2.75 },
+        ],
         image: "/menu/hamburger.jpeg",
         category: "Bebidas",
       },
       {
         name: "LICUADOS",
         description: "Fresa, piña, melón.",
-        prices: [{ label: "", value: 2.5 }],
+        prices: [
+          { label: "Fresa", value: 2.5 },
+          { label: "Piña", value: 2.5 },
+          { label: "Melón", value: 2.5 },
+        ],
         image: "/menu/hamburger.jpeg",
         category: "Bebidas",
       },

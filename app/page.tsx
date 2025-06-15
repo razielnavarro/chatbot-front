@@ -27,6 +27,7 @@ export interface CartItem extends MenuItem {
 export default function RestaurantMenu() {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [showFriesModal, setShowFriesModal] = useState(false);
+  const [showFlavorModal, setShowFlavorModal] = useState(false);
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
 
   const handleAddToCart = (item: MenuItem) => {
@@ -35,11 +36,19 @@ export default function RestaurantMenu() {
       (price) => price.label === "Con papas"
     );
 
+    // Check if item is a drink with flavor options
+    const isDrinkWithFlavors =
+      item.category === "Bebidas" &&
+      (item.name === "BATIDOS" || item.name === "LICUADOS");
+
     if (hasFriesOption) {
       setSelectedItem(item);
       setShowFriesModal(true);
+    } else if (isDrinkWithFlavors) {
+      setSelectedItem(item);
+      setShowFlavorModal(true);
     } else {
-      // If no fries option, add directly with the only price
+      // If no special options, add directly with the only price
       addToCart(item, item.prices[0]);
     }
   };
@@ -108,6 +117,17 @@ export default function RestaurantMenu() {
       }
     }
     setShowFriesModal(false);
+    setSelectedItem(null);
+  };
+
+  const handleFlavorSelection = (flavor: string) => {
+    if (selectedItem) {
+      const price = selectedItem.prices.find((p) => p.label === flavor);
+      if (price) {
+        addToCart(selectedItem, price);
+      }
+    }
+    setShowFlavorModal(false);
     setSelectedItem(null);
   };
 
@@ -182,6 +202,28 @@ export default function RestaurantMenu() {
               >
                 Con papas
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Flavor Selection Modal */}
+      {showFlavorModal && selectedItem && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+            <h3 className="text-xl font-bold mb-4">Selecciona el sabor</h3>
+            <p className="mb-4">{selectedItem.name}</p>
+            <div className="grid grid-cols-1 gap-3">
+              {selectedItem.prices.map((price) => (
+                <button
+                  key={price.label}
+                  onClick={() => handleFlavorSelection(price.label)}
+                  className="w-full bg-blue-600 text-white py-3 px-4 rounded hover:bg-blue-700 flex justify-between items-center"
+                >
+                  <span>{price.label}</span>
+                  <span>${price.value.toFixed(2)}</span>
+                </button>
+              ))}
             </div>
           </div>
         </div>
