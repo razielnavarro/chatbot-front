@@ -30,17 +30,7 @@ export function Header({ cartItemsCount, onCartClick }: HeaderProps) {
               aria-label="Ver carrito"
               onClick={onCartClick}
               type="button"
-            >
-              <ShoppingCart className="h-6 w-6 text-gray-600" />
-              {cartItemsCount > 0 && (
-                <Badge
-                  variant="destructive"
-                  className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 text-xs"
-                >
-                  {cartItemsCount}
-                </Badge>
-              )}
-            </button>
+            ></button>
           </div>
         </div>
       </div>
