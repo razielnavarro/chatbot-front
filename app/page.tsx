@@ -32,6 +32,12 @@ export default function RestaurantMenu() {
   const [orderType, setOrderType] = useState<"delivery" | "pickup">("delivery");
   const [showItemDetails, setShowItemDetails] = useState(false);
   const [itemDetails, setItemDetails] = useState<MenuItem | null>(null);
+  const [showToast, setShowToast] = useState(false);
+
+  const showAddedToast = () => {
+    setShowToast(true);
+    setTimeout(() => setShowToast(false), 1500);
+  };
 
   const handleAddToCart = (item: MenuItem) => {
     // Check if item has fries option
@@ -53,6 +59,7 @@ export default function RestaurantMenu() {
     } else {
       // If no special options, add directly with the only price
       addToCart(item, item.prices[0]);
+      showAddedToast();
     }
   };
 
@@ -73,6 +80,7 @@ export default function RestaurantMenu() {
       }
       return [...prev, { ...item, quantity: 1, selectedPrice }];
     });
+    showAddedToast();
   };
 
   const removeFromCart = (itemName: string, priceLabel: string) => {
@@ -392,6 +400,13 @@ export default function RestaurantMenu() {
               ))}
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Toast Notification */}
+      {showToast && (
+        <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 bg-green-600 text-white px-6 py-3 rounded shadow-lg text-base font-semibold animate-fade-in-out">
+          Agregado al carrito correctamente
         </div>
       )}
     </div>
