@@ -1,131 +1,129 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { MenuGrid } from "@/components/menu-grid"
-import { CartSidebar } from "@/components/cart-sidebar"
-import { Header } from "@/components/header"
+import { useState } from "react";
+import { MenuGrid } from "@/components/menu-grid";
+import { CartSidebar } from "@/components/cart-sidebar";
+import { Header } from "@/components/header";
+import { menu } from "@/data/menu-data";
+
+export interface MenuItemPrice {
+  label: string;
+  value: number;
+}
 
 export interface MenuItem {
-  id: string
-  name: string
-  description: string
-  price: number
-  image: string
-  category: string
+  name: string;
+  description: string;
+  prices: MenuItemPrice[];
+  category: string;
 }
 
 export interface CartItem extends MenuItem {
-  quantity: number
+  quantity: number;
+  selectedPrice: MenuItemPrice;
 }
 
-// Mock menu data - in a real app, this would come from an API
-const menuItems: MenuItem[] = [
-  {
-    id: "1",
-    name: "Martes Locos 6 Presas",
-    description: "6 piezas de pollo crujiente con nuestra receta secreta de 11 hierbas y especias",
-    price: 6.99,
-    image: "/placeholder.svg?height=200&width=300",
-    category: "Promociones",
-  },
-  {
-    id: "2",
-    name: "Martes Locos Paquete 6 Presas",
-    description: "6 piezas de pollo + 3 acompañamientos regulares + 3 pasteles",
-    price: 13.99,
-    image: "/placeholder.svg?height=200&width=300",
-    category: "Promociones",
-  },
-  {
-    id: "3",
-    name: "Martes Locos 8 Presas",
-    description: "8 piezas de pollo crujiente perfecto para compartir",
-    price: 8.99,
-    image: "/placeholder.svg?height=200&width=300",
-    category: "Promociones",
-  },
-  {
-    id: "4",
-    name: "Martes Locos Paquete 8 Presas",
-    description: "8 piezas de pollo + 4 acompañamientos regulares + 4 pasteles",
-    price: 16.99,
-    image: "/placeholder.svg?height=200&width=300",
-    category: "Promociones",
-  },
-  {
-    id: "5",
-    name: "Combo Kentucky BBQ Bacon",
-    description: "Hamburguesa BBQ Bacon + papas regulares + bebida regular",
-    price: 12.99,
-    image: "/placeholder.svg?height=200&width=300",
-    category: "Combos",
-  },
-  {
-    id: "6",
-    name: "Big Box Kentucky BBQ Bacon",
-    description: "Hamburguesa BBQ Bacon + 2 presas + papas + bebida + postre",
-    price: 15.99,
-    image: "/placeholder.svg?height=200&width=300",
-    category: "Combos",
-  },
-  {
-    id: "7",
-    name: "Pack Kentucky BBQ Bacon",
-    description: "2 Hamburguesas BBQ Bacon + 2 papas regulares + 2 bebidas",
-    price: 22.99,
-    image: "/placeholder.svg?height=200&width=300",
-    category: "Combos",
-  },
-  {
-    id: "8",
-    name: "Un Bucket Sorprendente",
-    description: "Bucket con variedad de productos KFC para toda la familia",
-    price: 18.99,
-    image: "/placeholder.svg?height=200&width=300",
-    category: "Buckets",
-  },
-]
-
 export default function RestaurantMenu() {
-  const [cartItems, setCartItems] = useState<CartItem[]>([])
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [showFriesModal, setShowFriesModal] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
 
-  const addToCart = (item: MenuItem) => {
+  const handleAddToCart = (item: MenuItem) => {
+    // Check if item has fries option
+    const hasFriesOption = item.prices.some(
+      (price) => price.label === "Con papas"
+    );
+
+    if (hasFriesOption) {
+      setSelectedItem(item);
+      setShowFriesModal(true);
+    } else {
+      // If no fries option, add directly with the only price
+      addToCart(item, item.prices[0]);
+    }
+  };
+
+  const addToCart = (item: MenuItem, selectedPrice: MenuItemPrice) => {
     setCartItems((prev) => {
-      const existingItem = prev.find((cartItem) => cartItem.id === item.id)
+      const existingItem = prev.find(
+        (cartItem) =>
+          cartItem.name === item.name &&
+          cartItem.selectedPrice.label === selectedPrice.label
+      );
       if (existingItem) {
         return prev.map((cartItem) =>
-          cartItem.id === item.id ? { ...cartItem, quantity: cartItem.quantity + 1 } : cartItem,
-        )
+          cartItem.name === item.name &&
+          cartItem.selectedPrice.label === selectedPrice.label
+            ? { ...cartItem, quantity: cartItem.quantity + 1 }
+            : cartItem
+        );
       }
-      return [...prev, { ...item, quantity: 1 }]
-    })
-  }
+      return [...prev, { ...item, quantity: 1, selectedPrice }];
+    });
+  };
 
-  const removeFromCart = (itemId: string) => {
-    setCartItems((prev) => prev.filter((item) => item.id !== itemId))
-  }
+  const removeFromCart = (itemName: string, priceLabel: string) => {
+    setCartItems((prev) =>
+      prev.filter(
+        (item) =>
+          !(item.name === itemName && item.selectedPrice.label === priceLabel)
+      )
+    );
+  };
 
-  const updateQuantity = (itemId: string, quantity: number) => {
+  const updateQuantity = (
+    itemName: string,
+    priceLabel: string,
+    quantity: number
+  ) => {
     if (quantity === 0) {
-      removeFromCart(itemId)
-      return
+      removeFromCart(itemName, priceLabel);
+      return;
     }
-    setCartItems((prev) => prev.map((item) => (item.id === itemId ? { ...item, quantity } : item)))
-  }
+    setCartItems((prev) =>
+      prev.map((item) =>
+        item.name === itemName && item.selectedPrice.label === priceLabel
+          ? { ...item, quantity }
+          : item
+      )
+    );
+  };
 
   const getTotalPrice = () => {
-    return cartItems.reduce((total, item) => total + item.price * item.quantity, 0)
-  }
+    return cartItems.reduce(
+      (total, item) => total + item.selectedPrice.value * item.quantity,
+      0
+    );
+  };
+
+  const handleFriesSelection = (withFries: boolean) => {
+    if (selectedItem) {
+      const price = withFries
+        ? selectedItem.prices.find((p) => p.label === "Con papas")
+        : selectedItem.prices.find((p) => p.label === "Sola");
+
+      if (price) {
+        addToCart(selectedItem, price);
+      }
+    }
+    setShowFriesModal(false);
+    setSelectedItem(null);
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header cartItemsCount={cartItems.reduce((total, item) => total + item.quantity, 0)} />
+      <Header
+        cartItemsCount={cartItems.reduce(
+          (total, item) => total + item.quantity,
+          0
+        )}
+      />
 
       <div className="container mx-auto px-4 py-6">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Menu Items - Takes 2 columns on desktop */}
           <div className="lg:col-span-2">
-            <MenuGrid items={menuItems} onAddToCart={addToCart} />
+            <MenuGrid items={menu} onAddToCart={handleAddToCart} />
           </div>
 
           {/* Cart Sidebar - Takes 1 column on desktop, full width on mobile */}
@@ -139,6 +137,54 @@ export default function RestaurantMenu() {
           </div>
         </div>
       </div>
+
+      {/* Fries Combo Modal */}
+      {showFriesModal && selectedItem && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+            <h3 className="text-xl font-bold mb-4">
+              ¿Deseas agregar papas fritas?
+            </h3>
+            <p className="mb-4">
+              {selectedItem.name} - {selectedItem.description}
+            </p>
+            <div className="flex justify-between mb-4">
+              <div>
+                <p className="font-semibold">Sin papas</p>
+                <p className="text-gray-600">
+                  $
+                  {selectedItem.prices
+                    .find((p) => p.label === "Sola")
+                    ?.value.toFixed(2)}
+                </p>
+              </div>
+              <div>
+                <p className="font-semibold">Con papas</p>
+                <p className="text-gray-600">
+                  $
+                  {selectedItem.prices
+                    .find((p) => p.label === "Con papas")
+                    ?.value.toFixed(2)}
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-4">
+              <button
+                onClick={() => handleFriesSelection(false)}
+                className="flex-1 bg-gray-200 text-gray-800 py-2 px-4 rounded hover:bg-gray-300"
+              >
+                Sin papas
+              </button>
+              <button
+                onClick={() => handleFriesSelection(true)}
+                className="flex-1 bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700"
+              >
+                Con papas
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
-  )
+  );
 }
