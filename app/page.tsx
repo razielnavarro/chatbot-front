@@ -183,7 +183,7 @@ export default function RestaurantMenu() {
       </button>
 
       {/* Sticky Delivery/Pickup Toggle */}
-      <div className="sticky top-0 z-30 bg-gray-50 pt-2 pb-3 flex justify-center md:pl-8 border-b border-gray-200">
+      {/* <div className="sticky top-0 z-30 bg-gray-50 pt-2 pb-3 flex justify-center md:pl-8 border-b border-gray-200">
         <div className="inline-flex rounded-full bg-white shadow-md overflow-hidden">
           <button
             className={`px-6 py-2 font-semibold transition-colors duration-200 focus:outline-none ${
@@ -208,7 +208,7 @@ export default function RestaurantMenu() {
             Delivery
           </button>
         </div>
-      </div>
+      </div> */}
 
       <div className="container mx-auto px-4 py-6">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
