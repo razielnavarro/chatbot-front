@@ -12,11 +12,15 @@ export function Header({ cartItemsCount }: HeaderProps) {
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
             <div className="w-12 h-12 bg-red-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-xl">KFC</span>
+              <span className="text-white font-bold text-xl">
+                <img
+                  src="assets/luigi/logo.jpg"
+                  className="h-auto w-auto"
+                  alt="Logo"
+                />
+              </span>
             </div>
-            <h1 className="text-2xl font-bold text-gray-900">
-              Restaurant Menu
-            </h1>
+            <h1 className="text-2xl font-bold text-gray-900">Menú</h1>
           </div>
 
           <div className="flex items-center space-x-4">
