@@ -29,6 +29,9 @@ export default function RestaurantMenu() {
   const [showFriesModal, setShowFriesModal] = useState(false);
   const [showFlavorModal, setShowFlavorModal] = useState(false);
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
+  const [orderType, setOrderType] = useState<"delivery" | "pickup">("delivery");
+  const [showItemDetails, setShowItemDetails] = useState(false);
+  const [itemDetails, setItemDetails] = useState<MenuItem | null>(null);
 
   const handleAddToCart = (item: MenuItem) => {
     // Check if item has fries option
@@ -140,11 +143,46 @@ export default function RestaurantMenu() {
         )}
       />
 
+      {/* Sticky Delivery/Pickup Toggle */}
+      <div className="sticky top-0 z-30 bg-gray-50 pt-2 pb-3 flex justify-center md:pl-8 border-b border-gray-200">
+        <div className="inline-flex rounded-full bg-white shadow-md overflow-hidden">
+          <button
+            className={`px-6 py-2 font-semibold transition-colors duration-200 focus:outline-none ${
+              orderType === "pickup"
+                ? "bg-red-600 text-white"
+                : "text-gray-700 bg-white hover:bg-gray-100"
+            }`}
+            onClick={() => setOrderType("pickup")}
+            aria-pressed={orderType === "pickup"}
+          >
+            Pickup
+          </button>
+          <button
+            className={`px-6 py-2 font-semibold transition-colors duration-200 focus:outline-none ${
+              orderType === "delivery"
+                ? "bg-red-600 text-white"
+                : "text-gray-700 bg-white hover:bg-gray-100"
+            }`}
+            onClick={() => setOrderType("delivery")}
+            aria-pressed={orderType === "delivery"}
+          >
+            Delivery
+          </button>
+        </div>
+      </div>
+
       <div className="container mx-auto px-4 py-6">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Menu Items - Takes 2 columns on desktop */}
           <div className="lg:col-span-2">
-            <MenuGrid items={menu} onAddToCart={handleAddToCart} />
+            <MenuGrid
+              items={menu}
+              onAddToCart={handleAddToCart}
+              onShowDetails={(item) => {
+                setItemDetails(item);
+                setShowItemDetails(true);
+              }}
+            />
           </div>
 
           {/* Cart Sidebar - Takes 1 column on desktop, full width on mobile */}
@@ -159,10 +197,119 @@ export default function RestaurantMenu() {
         </div>
       </div>
 
+      {/* Item Details Modal */}
+      {showItemDetails && itemDetails && (
+        <div
+          className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center p-4"
+          onClick={() => setShowItemDetails(false)}
+        >
+          <div
+            className="bg-white rounded-lg max-w-md w-full overflow-hidden flex flex-col relative"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 text-2xl font-bold z-10"
+              onClick={() => setShowItemDetails(false)}
+              aria-label="Cerrar"
+            >
+              ×
+            </button>
+            <div className="relative w-full h-56">
+              <img
+                src={itemDetails.image}
+                alt={itemDetails.name}
+                className="object-cover w-full h-full"
+              />
+            </div>
+            <div className="p-6 flex-1 flex flex-col">
+              <h2 className="text-2xl font-bold mb-2">{itemDetails.name}</h2>
+              <p className="text-gray-700 mb-4">{itemDetails.description}</p>
+              <div className="mb-4">
+                {itemDetails.prices.map((price) => (
+                  <div
+                    key={price.label}
+                    className="flex justify-between items-center mb-1"
+                  >
+                    <span className="font-medium text-gray-800">
+                      {price.label || "Precio"}
+                    </span>
+                    <span className="text-lg font-bold text-gray-900">
+                      ${price.value.toFixed(2)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-auto">
+                <button
+                  onClick={() => {
+                    setShowItemDetails(false);
+                    handleAddToCart(itemDetails);
+                  }}
+                  className="w-full bg-red-600 hover:bg-red-700 text-white flex items-center justify-center py-3 rounded-lg text-lg font-semibold"
+                >
+                  <span className="block md:hidden mx-auto">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-6 w-6"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13l-1.35 2.7A2 2 0 007.48 19h9.04a2 2 0 001.83-1.3L21 13M7 13V6a1 1 0 011-1h5a1 1 0 011 1v7"
+                      />
+                    </svg>
+                  </span>
+                  <span className="hidden md:flex items-center justify-center w-full">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5 mr-2"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13l-1.35 2.7A2 2 0 007.48 19h9.04a2 2 0 001.83-1.3L21 13M7 13V6a1 1 0 011-1h5a1 1 0 011 1v7"
+                      />
+                    </svg>
+                    Agregar al carrito
+                  </span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Fries Combo Modal */}
       {showFriesModal && selectedItem && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+          onClick={() => {
+            setShowFriesModal(false);
+            setSelectedItem(null);
+          }}
+        >
+          <div
+            className="bg-white rounded-lg p-6 max-w-md w-full relative"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 text-2xl font-bold z-10"
+              onClick={() => {
+                setShowFriesModal(false);
+                setSelectedItem(null);
+              }}
+              aria-label="Cerrar"
+            >
+              ×
+            </button>
             <h3 className="text-xl font-bold mb-4">
               ¿Deseas agregar papas fritas?
             </h3>
@@ -209,8 +356,27 @@ export default function RestaurantMenu() {
 
       {/* Flavor Selection Modal */}
       {showFlavorModal && selectedItem && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+          onClick={() => {
+            setShowFlavorModal(false);
+            setSelectedItem(null);
+          }}
+        >
+          <div
+            className="bg-white rounded-lg p-6 max-w-md w-full relative"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 text-2xl font-bold z-10"
+              onClick={() => {
+                setShowFlavorModal(false);
+                setSelectedItem(null);
+              }}
+              aria-label="Cerrar"
+            >
+              ×
+            </button>
             <h3 className="text-xl font-bold mb-4">Selecciona el sabor</h3>
             <p className="mb-4">{selectedItem.name}</p>
             <div className="grid grid-cols-1 gap-3">
