@@ -386,7 +386,7 @@ export default function RestaurantMenu() {
               </button>
               <button
                 onClick={() => handleFriesSelection(true)}
-                className="flex-1 bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700"
+                className="flex-1 bg-red-600 text-white py-2 px-4 rounded hover:bg-red-700"
               >
                 Con papas
               </button>
