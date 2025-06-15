@@ -3,9 +3,10 @@ import { Badge } from "@/components/ui/badge";
 
 interface HeaderProps {
   cartItemsCount: number;
+  onCartClick?: () => void;
 }
 
-export function Header({ cartItemsCount }: HeaderProps) {
+export function Header({ cartItemsCount, onCartClick }: HeaderProps) {
   return (
     <header className="bg-white shadow-sm border-b">
       <div className="container mx-auto px-4 py-4">
@@ -24,7 +25,12 @@ export function Header({ cartItemsCount }: HeaderProps) {
           </div>
 
           <div className="flex items-center space-x-4">
-            <div className="relative">
+            <button
+              className="relative focus:outline-none"
+              aria-label="Ver carrito"
+              onClick={onCartClick}
+              type="button"
+            >
               <ShoppingCart className="h-6 w-6 text-gray-600" />
               {cartItemsCount > 0 && (
                 <Badge
@@ -34,7 +40,7 @@ export function Header({ cartItemsCount }: HeaderProps) {
                   {cartItemsCount}
                 </Badge>
               )}
-            </div>
+            </button>
           </div>
         </div>
       </div>

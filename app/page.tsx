@@ -33,6 +33,7 @@ export default function RestaurantMenu() {
   const [showItemDetails, setShowItemDetails] = useState(false);
   const [itemDetails, setItemDetails] = useState<MenuItem | null>(null);
   const [showToast, setShowToast] = useState(false);
+  const [showMobileCart, setShowMobileCart] = useState(false);
 
   const showAddedToast = () => {
     setShowToast(true);
@@ -151,6 +152,36 @@ export default function RestaurantMenu() {
         )}
       />
 
+      {/* Floating Sticky Cart Button */}
+      <button
+        className="fixed z-50 bottom-6 right-6 md:bottom-8 md:right-8 bg-red-600 hover:bg-red-700 text-white rounded-full shadow-lg flex items-center justify-center w-16 h-16 md:w-20 md:h-20 focus:outline-none transition-all"
+        aria-label="Ver carrito"
+        onClick={() => setShowMobileCart(true)}
+        type="button"
+      >
+        <span className="relative">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-8 w-8 md:h-10 md:w-10"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13l-1.35 2.7A2 2 0 007.48 19h9.04a2 2 0 001.83-1.3L21 13M7 13V6a1 1 0 011-1h5a1 1 0 011 1v7"
+            />
+          </svg>
+          {cartItems.length > 0 && (
+            <span className="absolute -top-2 -right-2 bg-white text-red-600 rounded-full text-xs font-bold px-2 py-0.5 border border-red-600">
+              {cartItems.reduce((total, item) => total + item.quantity, 0)}
+            </span>
+          )}
+        </span>
+      </button>
+
       {/* Sticky Delivery/Pickup Toggle */}
       <div className="sticky top-0 z-30 bg-gray-50 pt-2 pb-3 flex justify-center md:pl-8 border-b border-gray-200">
         <div className="inline-flex rounded-full bg-white shadow-md overflow-hidden">
@@ -200,6 +231,8 @@ export default function RestaurantMenu() {
               onRemoveItem={removeFromCart}
               onUpdateQuantity={updateQuantity}
               totalPrice={getTotalPrice()}
+              show={showMobileCart}
+              onClose={() => setShowMobileCart(false)}
             />
           </div>
         </div>
