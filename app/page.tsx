@@ -16,6 +16,7 @@ export interface MenuItem {
   description: string;
   prices: MenuItemPrice[];
   category: string;
+  image: string;
 }
 
 export interface CartItem extends MenuItem {
