@@ -10,7 +10,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { CartItemComponent } from "./cart-item";
 import { ShoppingBag, X } from "lucide-react";
-import React from "react";
+import React, { useState } from "react";
 
 interface CartSidebarProps {
   items: CartItem[];
@@ -23,6 +23,7 @@ interface CartSidebarProps {
   totalPrice: number;
   show?: boolean;
   onClose?: () => void;
+  sessionToken?: string;
 }
 
 export function CartSidebar({
@@ -32,7 +33,53 @@ export function CartSidebar({
   totalPrice,
   show = false,
   onClose,
+  sessionToken,
 }: CartSidebarProps) {
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
+
+  const handleCheckout = async () => {
+    if (!sessionToken) {
+      console.error("No session token available");
+      return;
+    }
+
+    setIsCheckingOut(true);
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/orders`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            items: items.map((item) => ({
+              menuItemId: item.id, // You'll need to add this to your MenuItem interface
+              quantity: item.quantity,
+              price: item.selectedPrice.value,
+            })),
+            sessionToken,
+            total: totalPrice,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to create order");
+      }
+
+      const order = await response.json();
+      // Handle successful order creation
+      // e.g., redirect to confirmation page
+      window.location.href = `/order/confirmation?orderId=${order.id}`;
+    } catch (error) {
+      console.error("Error creating order:", error);
+      // Handle error (show error message to user)
+    } finally {
+      setIsCheckingOut(false);
+    }
+  };
+
   // Mobile and desktop modal/drawer
   return (
     <>
@@ -105,8 +152,10 @@ export function CartSidebar({
               <Button
                 className="w-full bg-red-600 hover:bg-red-700 text-white"
                 size="lg"
+                onClick={handleCheckout}
+                disabled={items.length === 0 || isCheckingOut}
               >
-                Proceder al Pago
+                {isCheckingOut ? "Procesando..." : "Realizar pedido"}
               </Button>
             </CardFooter>
           )}
@@ -183,8 +232,10 @@ export function CartSidebar({
               <Button
                 className="w-full bg-red-600 hover:bg-red-700 text-white"
                 size="lg"
+                onClick={handleCheckout}
+                disabled={items.length === 0 || isCheckingOut}
               >
-                Proceder al Pago
+                {isCheckingOut ? "Procesando..." : "Realizar pedido"}
               </Button>
             </CardFooter>
           )}
@@ -241,8 +292,10 @@ export function CartSidebar({
               <Button
                 className="w-full bg-red-600 hover:bg-red-700 text-white"
                 size="lg"
+                onClick={handleCheckout}
+                disabled={items.length === 0 || isCheckingOut}
               >
-                Proceder al Pago
+                {isCheckingOut ? "Procesando..." : "Realizar pedido"}
               </Button>
             </CardFooter>
           )}

@@ -4,6 +4,7 @@ export interface MenuItemPrice {
 }
 
 export interface MenuItem {
+  id: number;
   name: string;
   description: string;
   prices: MenuItemPrice[];
@@ -21,6 +22,7 @@ export const menu: MenuCategory[] = [
     name: "Hamburguesas",
     items: [
       {
+        id: 1,
         name: "LUIGII DE CARNE",
         description:
           "Carne de res, queso americano, lechuga, tomate, cebolla caramelizada, salsa luigii.",
@@ -32,6 +34,7 @@ export const menu: MenuCategory[] = [
         category: "Hamburguesas",
       },
       {
+        id: 2,
         name: "LUIGII DE CARNE CON BACON",
         description:
           "Carne de res, bacon, queso americano, lechuga, cebolla caramelizada, salsa luigii.",
@@ -43,6 +46,7 @@ export const menu: MenuCategory[] = [
         category: "Hamburguesas",
       },
       {
+        id: 3,
         name: "LUIGII DOBLE CARNE",
         description:
           "Doble carne de res, doble queso americano, lechuga, tomate, cebolla caramelizada, salsa luigii.",
@@ -54,6 +58,7 @@ export const menu: MenuCategory[] = [
         category: "Hamburguesas",
       },
       {
+        id: 4,
         name: "LUIGII DOBLE CARNE CON BACON",
         description:
           "Doble carne de res, doble queso americano, bacon, lechuga, cebolla caramelizada, salsa luigii.",
@@ -65,6 +70,7 @@ export const menu: MenuCategory[] = [
         category: "Hamburguesas",
       },
       {
+        id: 5,
         name: "LUIGII DE POLLO",
         description:
           "Pechuga de pollo apanada, queso americano, lechuga, tomate, cebolla caramelizada, salsa luigii.",
@@ -76,6 +82,7 @@ export const menu: MenuCategory[] = [
         category: "Hamburguesas",
       },
       {
+        id: 6,
         name: "LUIGII DE POLLO CON BACON",
         description:
           "Pechuga de pollo apanada, queso americano, bacon, lechuga, cebolla caramelizada, salsa luigii.",
@@ -92,6 +99,7 @@ export const menu: MenuCategory[] = [
     name: "Salchipapas",
     items: [
       {
+        id: 7,
         name: "SALCHIPAPA PEQUEÑA",
         description:
           "Papas fritas, carne molida, salchicha, salsa luigii, queso cheddar, ketchup.",
@@ -100,6 +108,7 @@ export const menu: MenuCategory[] = [
         category: "Salchipapas",
       },
       {
+        id: 8,
         name: "SALCHIPAPA GRANDE",
         description:
           "Papas, carne molida, salchicha, queso cheddar, ketchup. Para 1 o 2 personas.",
@@ -113,6 +122,7 @@ export const menu: MenuCategory[] = [
     name: "Pollo",
     items: [
       {
+        id: 9,
         name: "ALITAS BBQ",
         description:
           "6 alitas bañadas en salsa barbecue, acompañadas de papas fritas.",
@@ -121,6 +131,7 @@ export const menu: MenuCategory[] = [
         category: "Pollo",
       },
       {
+        id: 10,
         name: "DEDITOS DE POLLO",
         description:
           "5 deditos de pollo apanados, acompañados de papas fritas y salsa luigii.",
@@ -134,6 +145,7 @@ export const menu: MenuCategory[] = [
     name: "Varios",
     items: [
       {
+        id: 11,
         name: "TACOS",
         description:
           "Tortilla, lechuga, carne molida, salsa luigii, pico de gallo, queso cheddar. 3 unidades.",
@@ -142,6 +154,7 @@ export const menu: MenuCategory[] = [
         category: "Varios",
       },
       {
+        id: 12,
         name: "QUESADILLAS",
         description:
           "Tortilla, carne molida, cuatro quesos, pico de gallo y salsa luigii. 3 unidades.",
@@ -150,6 +163,7 @@ export const menu: MenuCategory[] = [
         category: "Varios",
       },
       {
+        id: 13,
         name: "NACHOS",
         description:
           "Nachos con carne molida, cuatro quesos, pico de gallo, queso cheddar, salsa luigii.",
@@ -163,6 +177,7 @@ export const menu: MenuCategory[] = [
     name: "Para Compartir",
     items: [
       {
+        id: 14,
         name: "BANDEJA",
         description:
           "2 hamburguesas de carne con bacon, 2 quesadillas, 1 salchipapa, 2 sodas.",
@@ -176,6 +191,7 @@ export const menu: MenuCategory[] = [
     name: "Bebidas",
     items: [
       {
+        id: 15,
         name: "BATIDOS",
         description: "Fresa, piña, melón.",
         prices: [
@@ -187,6 +203,7 @@ export const menu: MenuCategory[] = [
         category: "Bebidas",
       },
       {
+        id: 16,
         name: "LICUADOS",
         description: "Fresa, piña, melón.",
         prices: [
@@ -198,6 +215,7 @@ export const menu: MenuCategory[] = [
         category: "Bebidas",
       },
       {
+        id: 17,
         name: "SODA DE LATA",
         description: "",
         prices: [{ label: "", value: 1.25 }],
@@ -205,6 +223,7 @@ export const menu: MenuCategory[] = [
         category: "Bebidas",
       },
       {
+        id: 18,
         name: "BOTELLA DE AGUA",
         description: "",
         prices: [{ label: "", value: 1.0 }],

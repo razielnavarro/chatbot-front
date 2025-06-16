@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MenuGrid } from "@/components/menu-grid";
 import { CartSidebar } from "@/components/cart-sidebar";
 import { Header } from "@/components/header";
 import { menu } from "@/data/menu-data";
+import { useSession } from "@/src/contexts/SessionContext";
+import { useRouter } from "next/navigation";
 
 export interface MenuItemPrice {
   label: string;
@@ -12,6 +14,7 @@ export interface MenuItemPrice {
 }
 
 export interface MenuItem {
+  id: number;
   name: string;
   description: string;
   prices: MenuItemPrice[];
@@ -19,12 +22,20 @@ export interface MenuItem {
   image: string;
 }
 
-export interface CartItem extends MenuItem {
-  quantity: number;
+export interface CartItem {
+  id: number;
+  name: string;
   selectedPrice: MenuItemPrice;
+  quantity: number;
+  specialOptions?: {
+    fries?: boolean;
+    flavor?: string;
+  };
 }
 
 export default function RestaurantMenu() {
+  const { session, isLoading, error } = useSession();
+  const router = useRouter();
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [showFriesModal, setShowFriesModal] = useState(false);
   const [showFlavorModal, setShowFlavorModal] = useState(false);
@@ -34,6 +45,37 @@ export default function RestaurantMenu() {
   const [itemDetails, setItemDetails] = useState<MenuItem | null>(null);
   const [showToast, setShowToast] = useState(false);
   const [showMobileCart, setShowMobileCart] = useState(false);
+
+  // Redirect if no session token
+  useEffect(() => {
+    if (!isLoading && !session) {
+      router.push("/error?message=Invalid or expired session");
+    }
+  }, [isLoading, session, router]);
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Cargando...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-red-600 mb-2">Error</h2>
+          <p className="text-gray-600">{error}</p>
+        </div>
+      </div>
+    );
+  }
 
   const showAddedToast = () => {
     setShowToast(true);
@@ -182,35 +224,7 @@ export default function RestaurantMenu() {
         </span>
       </button>
 
-      {/* Sticky Delivery/Pickup Toggle */}
-      {/* <div className="sticky top-0 z-30 bg-gray-50 pt-2 pb-3 flex justify-center md:pl-8 border-b border-gray-200">
-        <div className="inline-flex rounded-full bg-white shadow-md overflow-hidden">
-          <button
-            className={`px-6 py-2 font-semibold transition-colors duration-200 focus:outline-none ${
-              orderType === "pickup"
-                ? "bg-red-600 text-white"
-                : "text-gray-700 bg-white hover:bg-gray-100"
-            }`}
-            onClick={() => setOrderType("pickup")}
-            aria-pressed={orderType === "pickup"}
-          >
-            Pickup
-          </button>
-          <button
-            className={`px-6 py-2 font-semibold transition-colors duration-200 focus:outline-none ${
-              orderType === "delivery"
-                ? "bg-red-600 text-white"
-                : "text-gray-700 bg-white hover:bg-gray-100"
-            }`}
-            onClick={() => setOrderType("delivery")}
-            aria-pressed={orderType === "delivery"}
-          >
-            Delivery
-          </button>
-        </div>
-      </div> */}
-
-      <div className="container mx-auto px-4 py-6">
+      <div className="container mx-auto px-4 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Menu Items - Takes 2 columns on desktop */}
           <div className="lg:col-span-2">
@@ -233,6 +247,7 @@ export default function RestaurantMenu() {
               totalPrice={getTotalPrice()}
               show={showMobileCart}
               onClose={() => setShowMobileCart(false)}
+              sessionToken={session?.token}
             />
           </div>
         </div>
@@ -262,7 +277,7 @@ export default function RestaurantMenu() {
                 className="object-cover w-full h-full"
               />
             </div>
-            <div className="p-6 flex-1 flex flex-col">
+            <div className="p-6">
               <h2 className="text-2xl font-bold mb-2">{itemDetails.name}</h2>
               <p className="text-gray-700 mb-4">{itemDetails.description}</p>
               <div className="mb-4">
@@ -280,7 +295,7 @@ export default function RestaurantMenu() {
                   </div>
                 ))}
               </div>
-              <div className="mt-auto">
+              <div>
                 <button
                   onClick={() => {
                     setShowItemDetails(false);
