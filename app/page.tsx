@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { useState, useEffect } from "react";
 import { MenuGrid } from "@/components/menu-grid";
 import { CartSidebar } from "@/components/cart-sidebar";
@@ -34,7 +35,7 @@ export interface CartItem extends MenuItem {
   };
 }
 
-export default function RestaurantMenu() {
+function MenuContent() {
   const { session, isLoading, error } = useSession();
   const router = useRouter();
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
@@ -486,5 +487,22 @@ export default function RestaurantMenu() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function RestaurantMenu() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto"></div>
+            <p className="mt-4 text-gray-600">Cargando...</p>
+          </div>
+        </div>
+      }
+    >
+      <MenuContent />
+    </Suspense>
   );
 }

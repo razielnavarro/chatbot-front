@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { useState, useEffect } from "react";
 import { useSession } from "@/src/contexts/SessionContext";
 import { useRouter } from "next/navigation";
@@ -14,7 +15,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-export default function AddressPage() {
+function AddressContent() {
   const { session, isLoading, error } = useSession();
   const router = useRouter();
   const [address, setAddress] = useState("");
@@ -122,5 +123,22 @@ export default function AddressPage() {
         </Card>
       </div>
     </div>
+  );
+}
+
+export default function AddressPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto"></div>
+            <p className="mt-4 text-gray-600">Cargando...</p>
+          </div>
+        </div>
+      }
+    >
+      <AddressContent />
+    </Suspense>
   );
 }
