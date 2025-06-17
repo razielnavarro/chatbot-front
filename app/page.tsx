@@ -1,30 +1,42 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MenuGrid } from "@/components/menu-grid";
 import { CartSidebar } from "@/components/cart-sidebar";
 import { Header } from "@/components/header";
 import { menu } from "@/data/menu-data";
+import { useSession } from "@/src/contexts/SessionContext";
+import { useRouter } from "next/navigation";
 
 export interface MenuItemPrice {
+  size: string;
   label: string;
   value: number;
 }
 
 export interface MenuItem {
+  id: number;
   name: string;
   description: string;
   prices: MenuItemPrice[];
+  image?: string;
   category: string;
-  image: string;
+  hasFries?: boolean;
+  hasFlavor?: boolean;
 }
 
 export interface CartItem extends MenuItem {
   quantity: number;
   selectedPrice: MenuItemPrice;
+  specialOptions?: {
+    fries?: boolean;
+    flavor?: string;
+  };
 }
 
 export default function RestaurantMenu() {
+  const { session, isLoading, error } = useSession();
+  const router = useRouter();
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [showFriesModal, setShowFriesModal] = useState(false);
   const [showFlavorModal, setShowFlavorModal] = useState(false);
@@ -34,6 +46,37 @@ export default function RestaurantMenu() {
   const [itemDetails, setItemDetails] = useState<MenuItem | null>(null);
   const [showToast, setShowToast] = useState(false);
   const [showMobileCart, setShowMobileCart] = useState(false);
+
+  // Redirect if no session token
+  useEffect(() => {
+    if (!isLoading && !session) {
+      router.push("/error?message=Invalid or expired session");
+    }
+  }, [isLoading, session, router]);
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Cargando...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-red-600 mb-2">Error</h2>
+          <p className="text-gray-600">{error}</p>
+        </div>
+      </div>
+    );
+  }
 
   const showAddedToast = () => {
     setShowToast(true);
