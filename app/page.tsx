@@ -1,7 +1,7 @@
 "use client";
+export const dynamic = "force-dynamic";
 
-import { Suspense } from "react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { MenuGrid } from "@/components/menu-grid";
 import { CartSidebar } from "@/components/cart-sidebar";
 import { Header } from "@/components/header";

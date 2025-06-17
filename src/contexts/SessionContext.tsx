@@ -1,6 +1,12 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  Suspense,
+} from "react";
 import { useSearchParams } from "next/navigation";
 
 interface Session {
@@ -27,7 +33,7 @@ const SessionContext = createContext<SessionContextType>({
   refreshSession: async () => {},
 });
 
-export function SessionProvider({ children }: { children: React.ReactNode }) {
+function SessionProviderContent({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -74,6 +80,23 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     >
       {children}
     </SessionContext.Provider>
+  );
+}
+
+export function SessionProvider({ children }: { children: React.ReactNode }) {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto"></div>
+            <p className="mt-4 text-gray-600">Cargando...</p>
+          </div>
+        </div>
+      }
+    >
+      <SessionProviderContent>{children}</SessionProviderContent>
+    </Suspense>
   );
 }
 
