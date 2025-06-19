@@ -5,15 +5,8 @@ import { useState, useEffect, Suspense } from "react";
 import { useSession } from "@/src/contexts/SessionContext";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { MapSection } from "@/components/map-section";
 import { config } from "@/lib/config";
 
 function AddressContent() {
@@ -74,10 +67,14 @@ function AddressContent() {
     );
   }
 
+  const handleAddressSelect = (selectedAddress: string) => {
+    setAddress(selectedAddress);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!session?.token) {
-      console.error("No session token available");
+    if (!session?.token || !address.trim()) {
+      console.error("No session token or address available");
       return;
     }
 
@@ -110,38 +107,39 @@ function AddressContent() {
 
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md mx-auto">
+      <div className="max-w-4xl mx-auto">
         <Card>
           <CardHeader>
             <CardTitle className="text-2xl font-bold text-center">
-              Dirección de Entrega
+              Selecciona tu Dirección de Entrega
             </CardTitle>
+            <p className="text-center text-gray-600">
+              Usa el mapa para seleccionar tu ubicación exacta
+            </p>
           </CardHeader>
-          <form onSubmit={handleSubmit}>
-            <CardContent>
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="address">Dirección</Label>
-                  <Input
-                    id="address"
-                    value={address}
-                    onChange={(e) => setAddress(e.target.value)}
-                    placeholder="Ingresa tu dirección de entrega"
-                    required
-                  />
-                </div>
+          <CardContent className="space-y-6">
+            {/* Map Section */}
+            <MapSection onAddressSelect={handleAddressSelect} />
+
+            {/* Address Display */}
+            {address && (
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <h3 className="font-semibold text-blue-900 mb-2">
+                  Dirección seleccionada:
+                </h3>
+                <p className="text-blue-800">{address}</p>
               </div>
-            </CardContent>
-            <CardFooter>
-              <Button
-                type="submit"
-                className="w-full bg-red-600 hover:bg-red-700 text-white"
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? "Guardando..." : "Guardar Dirección"}
-              </Button>
-            </CardFooter>
-          </form>
+            )}
+
+            {/* Submit Button */}
+            <Button
+              onClick={handleSubmit}
+              className="w-full bg-red-600 hover:bg-red-700 text-white py-3 text-lg"
+              disabled={isSubmitting || !address.trim()}
+            >
+              {isSubmitting ? "Guardando..." : "Confirmar Dirección"}
+            </Button>
+          </CardContent>
         </Card>
       </div>
     </div>
