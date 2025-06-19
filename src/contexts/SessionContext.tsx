@@ -1,78 +1,82 @@
 "use client";
 
-import {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-  Suspense,
-} from "react";
-import { useSearchParams } from "next/navigation";
+import React, { createContext, useContext, useEffect, useState } from "react";
+import { config } from "@/lib/config";
 
 interface Session {
-  id: string;
+  id: number;
   token: string;
   phone: string;
   state: string;
-  orderId?: string;
+  orderId: number | null;
+  address: string | null;
   createdAt: string;
   updatedAt: string;
+  expiresAt: string;
 }
 
 interface SessionContextType {
   session: Session | null;
   isLoading: boolean;
   error: string | null;
-  refreshSession: () => Promise<void>;
+  refreshSession: () => void;
 }
 
-const SessionContext = createContext<SessionContextType>({
-  session: null,
-  isLoading: true,
-  error: null,
-  refreshSession: async () => {},
-});
+const SessionContext = createContext<SessionContextType | undefined>(undefined);
 
-function SessionProviderContent({ children }: { children: React.ReactNode }) {
+export function SessionProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const searchParams = useSearchParams();
+
+  const getSessionFromUrl = () => {
+    if (typeof window === "undefined") return null;
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get("token");
+  };
 
   const fetchSession = async (token: string) => {
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/sessions/${token}`
-      );
+      setIsLoading(true);
+      setError(null);
+
+      const response = await fetch(`${config.apiUrl}/api/sessions/${token}`);
+
       if (!response.ok) {
+        if (response.status === 404) {
+          throw new Error("Session not found or expired");
+        }
         throw new Error("Failed to fetch session");
       }
-      const data = await response.json();
-      setSession(data);
-      setError(null);
+
+      const sessionData = await response.json();
+      setSession(sessionData);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to fetch session");
+      setError(err instanceof Error ? err.message : "An error occurred");
       setSession(null);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const refreshSession = async () => {
-    if (session?.token) {
-      await fetchSession(session.token);
-    }
-  };
-
-  useEffect(() => {
-    const token = searchParams.get("token");
+  const refreshSession = () => {
+    const token = getSessionFromUrl();
     if (token) {
       fetchSession(token);
     } else {
       setIsLoading(false);
-      setError("No session token provided");
+      setSession(null);
     }
-  }, [searchParams]);
+  };
+
+  useEffect(() => {
+    const token = getSessionFromUrl();
+    if (token) {
+      fetchSession(token);
+    } else {
+      setIsLoading(false);
+    }
+  }, []);
 
   return (
     <SessionContext.Provider
@@ -80,23 +84,6 @@ function SessionProviderContent({ children }: { children: React.ReactNode }) {
     >
       {children}
     </SessionContext.Provider>
-  );
-}
-
-export function SessionProvider({ children }: { children: React.ReactNode }) {
-  return (
-    <Suspense
-      fallback={
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Cargando...</p>
-          </div>
-        </div>
-      }
-    >
-      <SessionProviderContent>{children}</SessionProviderContent>
-    </Suspense>
   );
 }
 

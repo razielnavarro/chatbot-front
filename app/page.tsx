@@ -271,11 +271,11 @@ function MenuContent() {
           {/* Cart Sidebar - Takes 1 column on desktop, full width on mobile */}
           <div className="lg:col-span-1">
             <CartSidebar
-              items={cartItems}
+              cartItems={cartItems}
               onRemoveItem={removeFromCart}
               onUpdateQuantity={updateQuantity}
               totalPrice={getTotalPrice()}
-              show={showMobileCart}
+              isOpen={showMobileCart}
               onClose={() => setShowMobileCart(false)}
             />
           </div>

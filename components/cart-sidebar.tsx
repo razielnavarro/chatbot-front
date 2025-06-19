@@ -1,310 +1,242 @@
 "use client";
 
-import type { CartItem } from "@/app/page";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { CartItemComponent } from "./cart-item";
-import { ShoppingBag, X } from "lucide-react";
-import React, { useState } from "react";
-import { useSession } from "@/src/contexts/SessionContext";
-import { useRouter } from "next/navigation";
+import { X, ShoppingCart, Trash2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { config } from "@/lib/config";
+import type { CartItem } from "@/app/page";
 
 interface CartSidebarProps {
-  items: CartItem[];
-  onRemoveItem: (itemName: string, priceLabel: string) => void;
+  isOpen: boolean;
+  onClose: () => void;
+  cartItems: CartItem[];
   onUpdateQuantity: (
     itemName: string,
     priceLabel: string,
     quantity: number
   ) => void;
+  onRemoveItem: (itemName: string, priceLabel: string) => void;
   totalPrice: number;
-  show?: boolean;
-  onClose?: () => void;
 }
 
 export function CartSidebar({
-  items,
-  onRemoveItem,
-  onUpdateQuantity,
-  totalPrice,
-  show = false,
+  isOpen,
   onClose,
+  cartItems,
+  onUpdateQuantity,
+  onRemoveItem,
+  totalPrice,
 }: CartSidebarProps) {
-  const { session } = useSession();
-  const router = useRouter();
   const [isCheckingOut, setIsCheckingOut] = useState(false);
+  const { toast } = useToast();
+
+  const deliveryFee = 1.5;
+  const total = totalPrice + deliveryFee;
 
   const handleCheckout = async () => {
-    if (!session?.token) {
-      console.error("No session token available");
+    if (cartItems.length === 0) {
+      toast({
+        title: "Carrito vacío",
+        description: "Agrega algunos items antes de continuar",
+        variant: "destructive",
+      });
       return;
     }
 
     setIsCheckingOut(true);
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/orders`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            items: items.map((item) => ({
-              menuItemId: item.id,
-              quantity: item.quantity,
-              price: item.selectedPrice.value,
-            })),
-            sessionToken: session.token,
-            total: items.reduce(
-              (sum, item) => sum + item.selectedPrice.value * item.quantity,
-              0
-            ),
-          }),
-        }
-      );
+      const orderData = {
+        items: cartItems.map((cartItem) => ({
+          menuItemId: cartItem.id,
+          quantity: cartItem.quantity,
+          unitPrice: cartItem.selectedPrice.value,
+          priceLabel: cartItem.selectedPrice.label,
+        })),
+        subtotal: totalPrice,
+        deliveryFee,
+        total,
+      };
+
+      const response = await fetch(`${config.apiUrl}/api/orders`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(orderData),
+      });
 
       if (!response.ok) {
         throw new Error("Failed to create order");
       }
 
       const order = await response.json();
-      router.push(`/order/confirmation?orderId=${order.id}`);
+
+      toast({
+        title: "¡Orden creada!",
+        description: `Tu orden #${order.id} ha sido creada exitosamente`,
+      });
+
+      onClose();
     } catch (error) {
       console.error("Error creating order:", error);
-      // Handle error (show error message to user)
+      toast({
+        title: "Error",
+        description: "No se pudo crear la orden. Intenta de nuevo.",
+        variant: "destructive",
+      });
     } finally {
       setIsCheckingOut(false);
     }
   };
 
-  // Mobile and desktop modal/drawer
   return (
     <>
-      {/* Mobile Drawer */}
-      <div
-        className={`fixed inset-0 z-50 bg-black bg-opacity-40 flex items-end md:hidden transition-all duration-300 ${
-          show ? "" : "pointer-events-none opacity-0"
-        }`}
-        style={{ visibility: show ? "visible" : "hidden" }}
-        onClick={onClose}
-      >
+      {isOpen && (
         <div
-          className={`bg-white w-full rounded-t-2xl shadow-lg max-h-[90vh] overflow-y-auto relative p-2 pt-8 transition-transform duration-300 ${
-            show ? "translate-y-0" : "translate-y-full"
-          }`}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <button
-            className="absolute top-2 right-4 text-gray-500 hover:text-gray-700 text-2xl font-bold z-10"
-            onClick={onClose}
-            aria-label="Cerrar"
-          >
-            <X className="w-6 h-6" />
-          </button>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <ShoppingBag className="h-5 w-5" />
-              Resumen del Pedido
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {items.length === 0 ? (
+          className="fixed inset-0 bg-black bg-opacity-50 z-40"
+          onClick={onClose}
+        />
+      )}
+
+      <div
+        className={`fixed top-0 right-0 h-full w-full max-w-md bg-white shadow-xl transform transition-transform duration-300 ease-in-out z-50 ${
+          isOpen ? "translate-x-0" : "translate-x-full"
+        }`}
+      >
+        <div className="flex flex-col h-full">
+          <div className="flex items-center justify-between p-4 border-b">
+            <div className="flex items-center gap-2">
+              <ShoppingCart className="h-6 w-6 text-red-600" />
+              <h2 className="text-xl font-semibold">Tu Carrito</h2>
+              <Badge variant="secondary">{cartItems.length}</Badge>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onClose}
+              className="h-8 w-8 p-0"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+
+          <div className="flex-1 overflow-y-auto p-4">
+            {cartItems.length === 0 ? (
               <div className="text-center py-8">
-                <ShoppingBag className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <ShoppingCart className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                 <p className="text-gray-500">Tu carrito está vacío</p>
-                <p className="text-sm text-gray-400">
-                  Agrega algunos deliciosos items para comenzar
-                </p>
               </div>
             ) : (
-              <div className="space-y-3 max-h-96 overflow-y-auto">
-                {items.map((item) => (
-                  <CartItemComponent
-                    key={`${item.name}-${item.selectedPrice.label}`}
-                    item={item}
-                    onRemove={() =>
-                      onRemoveItem(item.name, item.selectedPrice.label)
-                    }
-                    onUpdateQuantity={(quantity) =>
-                      onUpdateQuantity(
-                        item.name,
-                        item.selectedPrice.label,
-                        quantity
-                      )
-                    }
-                  />
+              <div className="space-y-4">
+                {cartItems.map((cartItem) => (
+                  <Card
+                    key={`${cartItem.id}-${cartItem.selectedPrice.label}`}
+                    className="p-4"
+                  >
+                    <div className="flex gap-3">
+                      <img
+                        src={cartItem.image || "/placeholder.jpg"}
+                        alt={cartItem.name}
+                        className="w-16 h-16 object-cover rounded-lg"
+                      />
+                      <div className="flex-1">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <h3 className="font-medium">{cartItem.name}</h3>
+                            <p className="text-sm text-gray-600">
+                              ${cartItem.selectedPrice.value.toFixed(2)} -{" "}
+                              {cartItem.selectedPrice.label}
+                            </p>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() =>
+                              onRemoveItem(
+                                cartItem.name,
+                                cartItem.selectedPrice.label
+                              )
+                            }
+                            className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+
+                        <div className="flex items-center gap-2 mt-3">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() =>
+                              onUpdateQuantity(
+                                cartItem.name,
+                                cartItem.selectedPrice.label,
+                                cartItem.quantity - 1
+                              )
+                            }
+                            disabled={cartItem.quantity <= 1}
+                            className="h-6 w-6 p-0"
+                          >
+                            -
+                          </Button>
+                          <span className="text-sm font-medium w-8 text-center">
+                            {cartItem.quantity}
+                          </span>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() =>
+                              onUpdateQuantity(
+                                cartItem.name,
+                                cartItem.selectedPrice.label,
+                                cartItem.quantity + 1
+                              )
+                            }
+                            className="h-6 w-6 p-0"
+                          >
+                            +
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
                 ))}
               </div>
             )}
-          </CardContent>
-          {items.length > 0 && (
-            <CardFooter className="flex-col space-y-4">
-              <Separator />
-              <div className="flex justify-between items-center w-full">
-                <span className="text-lg font-semibold">Total:</span>
-                <span className="text-2xl font-bold text-red-600">
-                  ${totalPrice.toFixed(2)}
-                </span>
+          </div>
+
+          {cartItems.length > 0 && (
+            <div className="border-t p-4 space-y-4">
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span>Subtotal:</span>
+                  <span>${totalPrice.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span>Envío:</span>
+                  <span>${deliveryFee.toFixed(2)}</span>
+                </div>
+                <Separator />
+                <div className="flex justify-between font-semibold">
+                  <span>Total:</span>
+                  <span>${total.toFixed(2)}</span>
+                </div>
               </div>
+
               <Button
-                className="w-full bg-red-600 hover:bg-red-700 text-white"
-                size="lg"
                 onClick={handleCheckout}
-                disabled={items.length === 0 || isCheckingOut}
+                disabled={isCheckingOut}
+                className="w-full bg-red-600 hover:bg-red-700 text-white"
               >
-                {isCheckingOut ? "Procesando..." : "Realizar pedido"}
+                {isCheckingOut ? "Procesando..." : "Finalizar Pedido"}
               </Button>
-            </CardFooter>
+            </div>
           )}
         </div>
-      </div>
-      {/* Desktop Drawer/Modal (triggered by floating button) */}
-      <div
-        className={`hidden md:fixed md:inset-0 md:z-50 md:bg-black md:bg-opacity-40 md:flex md:items-center md:justify-end transition-all duration-300 ${
-          show
-            ? "md:pointer-events-auto md:opacity-100"
-            : "md:pointer-events-none md:opacity-0"
-        }`}
-        style={{ visibility: show ? "visible" : "hidden" }}
-        onClick={onClose}
-      >
-        <div
-          className={`bg-white w-full max-w-md h-full shadow-lg overflow-y-auto relative p-2 pt-8 transition-transform duration-300 md:rounded-l-2xl ${
-            show ? "md:translate-x-0" : "md:translate-x-full"
-          }`}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <button
-            className="absolute top-2 right-4 text-gray-500 hover:text-gray-700 text-2xl font-bold z-10"
-            onClick={onClose}
-            aria-label="Cerrar"
-          >
-            <X className="w-6 h-6" />
-          </button>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <ShoppingBag className="h-5 w-5" />
-              Resumen del Pedido
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {items.length === 0 ? (
-              <div className="text-center py-8">
-                <ShoppingBag className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-500">Tu carrito está vacío</p>
-                <p className="text-sm text-gray-400">
-                  Agrega algunos deliciosos items para comenzar
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-3 max-h-96 overflow-y-auto">
-                {items.map((item) => (
-                  <CartItemComponent
-                    key={`${item.name}-${item.selectedPrice.label}`}
-                    item={item}
-                    onRemove={() =>
-                      onRemoveItem(item.name, item.selectedPrice.label)
-                    }
-                    onUpdateQuantity={(quantity) =>
-                      onUpdateQuantity(
-                        item.name,
-                        item.selectedPrice.label,
-                        quantity
-                      )
-                    }
-                  />
-                ))}
-              </div>
-            )}
-          </CardContent>
-          {items.length > 0 && (
-            <CardFooter className="flex-col space-y-4">
-              <Separator />
-              <div className="flex justify-between items-center w-full">
-                <span className="text-lg font-semibold">Total:</span>
-                <span className="text-2xl font-bold text-red-600">
-                  ${totalPrice.toFixed(2)}
-                </span>
-              </div>
-              <Button
-                className="w-full bg-red-600 hover:bg-red-700 text-white"
-                size="lg"
-                onClick={handleCheckout}
-                disabled={items.length === 0 || isCheckingOut}
-              >
-                {isCheckingOut ? "Procesando..." : "Realizar pedido"}
-              </Button>
-            </CardFooter>
-          )}
-        </div>
-      </div>
-      {/* Desktop Static Sidebar (always visible) */}
-      <div className="hidden md:block">
-        <Card className="sticky top-6 h-fit">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <ShoppingBag className="h-5 w-5" />
-              Resumen del Pedido
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {items.length === 0 ? (
-              <div className="text-center py-8">
-                <ShoppingBag className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-500">Tu carrito está vacío</p>
-                <p className="text-sm text-gray-400">
-                  Agrega algunos deliciosos items para comenzar
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-3 max-h-96 overflow-y-auto">
-                {items.map((item) => (
-                  <CartItemComponent
-                    key={`${item.name}-${item.selectedPrice.label}`}
-                    item={item}
-                    onRemove={() =>
-                      onRemoveItem(item.name, item.selectedPrice.label)
-                    }
-                    onUpdateQuantity={(quantity) =>
-                      onUpdateQuantity(
-                        item.name,
-                        item.selectedPrice.label,
-                        quantity
-                      )
-                    }
-                  />
-                ))}
-              </div>
-            )}
-          </CardContent>
-          {items.length > 0 && (
-            <CardFooter className="flex-col space-y-4">
-              <Separator />
-              <div className="flex justify-between items-center w-full">
-                <span className="text-lg font-semibold">Total:</span>
-                <span className="text-2xl font-bold text-red-600">
-                  ${totalPrice.toFixed(2)}
-                </span>
-              </div>
-              <Button
-                className="w-full bg-red-600 hover:bg-red-700 text-white"
-                size="lg"
-                onClick={handleCheckout}
-                disabled={items.length === 0 || isCheckingOut}
-              >
-                {isCheckingOut ? "Procesando..." : "Realizar pedido"}
-              </Button>
-            </CardFooter>
-          )}
-        </Card>
       </div>
     </>
   );

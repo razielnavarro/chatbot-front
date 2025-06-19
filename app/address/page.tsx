@@ -14,12 +14,14 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { config } from "@/lib/config";
 
 function AddressContent() {
   const { session, isLoading, error } = useSession();
   const router = useRouter();
   const [address, setAddress] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
 
   // Redirect if no session token
   useEffect(() => {
@@ -52,6 +54,26 @@ function AddressContent() {
     );
   }
 
+  // Show success state
+  if (showSuccess) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-green-600 text-6xl mb-4">✅</div>
+          <h2 className="text-2xl font-bold text-green-600 mb-2">
+            ¡Dirección Guardada!
+          </h2>
+          <p className="text-gray-600 mb-4">
+            Gracias por enviarnos tu dirección
+          </p>
+          <p className="text-sm text-gray-500">
+            Puedes cerrar esta ventana y volver a WhatsApp
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!session?.token) {
@@ -62,7 +84,7 @@ function AddressContent() {
     setIsSubmitting(true);
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/sessions/${session.token}/address`,
+        `${config.apiUrl}/api/sessions/${session.token}/address`,
         {
           method: "POST",
           headers: {
@@ -76,8 +98,8 @@ function AddressContent() {
         throw new Error("Failed to update address");
       }
 
-      // Redirect back to menu after successful address update
-      router.push("/");
+      // Show success message
+      setShowSuccess(true);
     } catch (error) {
       console.error("Error updating address:", error);
       // Handle error (show error message to user)

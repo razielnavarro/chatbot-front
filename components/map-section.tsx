@@ -1,377 +1,223 @@
 "use client";
 
-import { useState, useCallback, useEffect, useRef } from "react";
-import { Search, MapPin, X } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { useLoadScript, GoogleMap } from "@react-google-maps/api";
-import Image from "next/image";
-
-// David, Chiriquí coordinates (fallback)
-const DEFAULT_CENTER = {
-  lat: 8.4273,
-  lng: -82.4308,
-};
-
-const mapContainerStyle = {
-  width: "100%",
-  height: "100%",
-};
-
-const libraries: ["places"] = ["places"];
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { MapPin, Search } from "lucide-react";
+import { config } from "@/lib/config";
 
 interface MapSectionProps {
-  selectedAddress: string;
-  onAddressSelect: (
-    address: string,
-    details?: {
-      provincia?: string;
-      distrito?: string;
-      calle?: string;
-      zona?: string;
-      numero?: string;
-    }
-  ) => void;
+  onAddressSelect: (address: string) => void;
+  initialAddress?: string;
 }
 
 export function MapSection({
-  selectedAddress,
   onAddressSelect,
+  initialAddress,
 }: MapSectionProps) {
-  const [searchValue, setSearchValue] = useState("");
-  const [displayAddress, setDisplayAddress] = useState("");
-  const [center, setCenter] = useState(DEFAULT_CENTER);
+  const [address, setAddress] = useState(initialAddress || "");
+  const [isLoading, setIsLoading] = useState(false);
   const [map, setMap] = useState<google.maps.Map | null>(null);
-  const [isLocating, setIsLocating] = useState(true);
-  const [isUpdatingAddress, setIsUpdatingAddress] = useState(false);
-  const [predictions, setPredictions] = useState<
-    google.maps.places.AutocompletePrediction[]
-  >([]);
-  const [showPredictions, setShowPredictions] = useState(false);
-  const [isDragging, setIsDragging] = useState(false);
+  const [marker, setMarker] = useState<google.maps.Marker | null>(null);
+  const [autocomplete, setAutocomplete] =
+    useState<google.maps.places.Autocomplete | null>(null);
+  const mapRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  // Use a ref to track if we should update the center
-  const shouldUpdateCenter = useRef(true);
-  const isUserTyping = useRef(false);
-
-  const { isLoaded, loadError } = useLoadScript({
-    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "",
-    libraries,
-  });
-
-  // Get user's current location on component mount
   useEffect(() => {
-    if (!isLoaded) return;
+    // Load Google Maps script
+    const loadGoogleMaps = () => {
+      if (window.google && window.google.maps) {
+        initializeMap();
+        return;
+      }
 
-    if ("geolocation" in navigator) {
+      const script = document.createElement("script");
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${config.googleMapsApiKey}&libraries=places`;
+      script.async = true;
+      script.defer = true;
+      script.onload = initializeMap;
+      document.head.appendChild(script);
+    };
+
+    loadGoogleMaps();
+  }, []);
+
+  const initializeMap = () => {
+    if (!mapRef.current || !window.google) return;
+
+    // Initialize map
+    const mapInstance = new window.google.maps.Map(mapRef.current, {
+      center: { lat: 8.538, lng: -82.427 }, // David, Panama
+      zoom: 15,
+      mapTypeControl: false,
+      streetViewControl: false,
+      fullscreenControl: false,
+    });
+
+    // Initialize marker
+    const markerInstance = new window.google.maps.Marker({
+      position: { lat: 8.538, lng: -82.427 },
+      map: mapInstance,
+      draggable: false,
+      title: "Tu ubicación",
+    });
+
+    // Initialize autocomplete
+    if (inputRef.current) {
+      const autocompleteInstance = new window.google.maps.places.Autocomplete(
+        inputRef.current,
+        {
+          types: ["address"],
+          componentRestrictions: { country: "pa" },
+        }
+      );
+
+      autocompleteInstance.addListener("place_changed", () => {
+        const place = autocompleteInstance.getPlace();
+        if (place.geometry && place.geometry.location) {
+          const lat = place.geometry.location.lat();
+          const lng = place.geometry.location.lng();
+
+          mapInstance.setCenter({ lat, lng });
+          markerInstance.setPosition({ lat, lng });
+
+          const addressString = place.formatted_address || "";
+          setAddress(addressString);
+          onAddressSelect(addressString);
+        }
+      });
+
+      setAutocomplete(autocompleteInstance);
+    }
+
+    // Add map click listener
+    mapInstance.addListener("click", (event: google.maps.MapMouseEvent) => {
+      if (event.latLng) {
+        const lat = event.latLng.lat();
+        const lng = event.latLng.lng();
+
+        markerInstance.setPosition({ lat, lng });
+
+        // Reverse geocode to get address
+        const geocoder = new window.google.maps.Geocoder();
+        geocoder.geocode({ location: { lat, lng } }, (results, status) => {
+          if (status === "OK" && results && results[0]) {
+            const addressString = results[0].formatted_address;
+            setAddress(addressString);
+            onAddressSelect(addressString);
+          }
+        });
+      }
+    });
+
+    setMap(mapInstance);
+    setMarker(markerInstance);
+  };
+
+  const handleSearch = () => {
+    if (!autocomplete || !inputRef.current) return;
+
+    const geocoder = new window.google.maps.Geocoder();
+    geocoder.geocode({ address: address }, (results, status) => {
+      if (status === "OK" && results && results[0]) {
+        const location = results[0].geometry.location;
+        if (map && marker && location) {
+          map.setCenter(location);
+          marker.setPosition(location);
+          const addressString = results[0].formatted_address;
+          setAddress(addressString);
+          onAddressSelect(addressString);
+        }
+      }
+    });
+  };
+
+  const handleUseCurrentLocation = () => {
+    setIsLoading(true);
+
+    if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          const userLocation = {
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
-          };
-          setCenter(userLocation);
-          shouldUpdateCenter.current = true;
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
 
-          if (map) {
-            map.setCenter(userLocation);
-            updateAddressFromCoordinates(userLocation.lat, userLocation.lng);
+          if (map && marker) {
+            map.setCenter({ lat, lng });
+            marker.setPosition({ lat, lng });
+
+            // Reverse geocode to get address
+            const geocoder = new window.google.maps.Geocoder();
+            geocoder.geocode({ location: { lat, lng } }, (results, status) => {
+              if (status === "OK" && results && results[0]) {
+                const addressString = results[0].formatted_address;
+                setAddress(addressString);
+                onAddressSelect(addressString);
+              }
+              setIsLoading(false);
+            });
           }
-          setIsLocating(false);
         },
         (error) => {
           console.error("Error getting location:", error);
-          setIsLocating(false);
-        },
-        {
-          enableHighAccuracy: true,
-          timeout: 5000,
-          maximumAge: 0,
+          setIsLoading(false);
         }
       );
     } else {
-      setIsLocating(false);
+      setIsLoading(false);
     }
-  }, [isLoaded, map]);
-
-  const parseAddressComponents = (results: google.maps.GeocoderResult[]) => {
-    const addressComponents = results[0].address_components;
-    const details: { [key: string]: string } = {};
-
-    for (const component of addressComponents) {
-      const types = component.types;
-
-      if (types.includes("administrative_area_level_1")) {
-        details.provincia = component.long_name;
-      }
-      if (
-        types.includes("locality") ||
-        types.includes("administrative_area_level_2")
-      ) {
-        details.distrito = component.long_name;
-      }
-      if (types.includes("route")) {
-        details.calle = component.long_name;
-      }
-      if (types.includes("sublocality") || types.includes("neighborhood")) {
-        details.zona = component.long_name;
-      }
-      if (types.includes("street_number")) {
-        details.numero = component.long_name;
-      }
-    }
-
-    return details;
   };
 
-  const onLoad = useCallback((map: google.maps.Map) => {
-    setMap(map);
-
-    // Add drag start listener
-    map.addListener("dragstart", () => {
-      setIsDragging(true);
-      setShowPredictions(false);
-    });
-
-    // Add drag end listener
-    map.addListener("dragend", () => {
-      setIsDragging(false);
-    });
-
-    // Update address when map stops moving
-    map.addListener("idle", () => {
-      if (!shouldUpdateCenter.current) {
-        shouldUpdateCenter.current = true;
-        return;
-      }
-
-      const mapCenter = map.getCenter();
-      if (mapCenter) {
-        const newCenter = {
-          lat: mapCenter.lat(),
-          lng: mapCenter.lng(),
-        };
-        setCenter(newCenter);
-        updateAddressFromCoordinates(newCenter.lat, newCenter.lng);
-      }
-    });
-  }, []);
-
-  // Handle search input changes
-  const handleSearchChange = useCallback(
-    (value: string) => {
-      isUserTyping.current = true;
-      setSearchValue(value);
-      if (!value) {
-        setPredictions([]);
-        setShowPredictions(false);
-        return;
-      }
-
-      // Use Places Autocomplete service
-      if (isLoaded) {
-        const service = new google.maps.places.AutocompleteService();
-        service.getPlacePredictions(
-          {
-            input: value,
-            componentRestrictions: { country: "pa" }, // Restrict to Panama
-          },
-          (predictions, status) => {
-            if (
-              status === google.maps.places.PlacesServiceStatus.OK &&
-              predictions
-            ) {
-              setPredictions(predictions);
-              setShowPredictions(true);
-            } else {
-              setPredictions([]);
-              setShowPredictions(false);
-            }
-          }
-        );
-      }
-    },
-    [isLoaded]
-  );
-
-  // Handle prediction selection
-  const handlePredictionSelect = useCallback(
-    (prediction: google.maps.places.AutocompletePrediction) => {
-      if (!map) return;
-
-      const placesService = new google.maps.places.PlacesService(map);
-      placesService.getDetails(
-        {
-          placeId: prediction.place_id,
-          fields: ["geometry", "formatted_address", "address_components"],
-        },
-        (place, status) => {
-          if (
-            status === google.maps.places.PlacesServiceStatus.OK &&
-            place?.geometry?.location
-          ) {
-            const newPos = {
-              lat: place.geometry.location.lat(),
-              lng: place.geometry.location.lng(),
-            };
-
-            shouldUpdateCenter.current = true;
-            setCenter(newPos);
-            map.setCenter(newPos);
-
-            if (place.formatted_address) {
-              setSearchValue(place.formatted_address);
-              if (place.address_components) {
-                const details = parseAddressComponents([
-                  {
-                    address_components: place.address_components,
-                    formatted_address: place.formatted_address,
-                    geometry: {
-                      location: place.geometry.location,
-                      viewport: place.geometry.viewport,
-                    } as unknown as google.maps.GeocoderGeometry,
-                    place_id: place.place_id!,
-                    types: [],
-                  },
-                ]);
-                onAddressSelect(place.formatted_address, details);
-              } else {
-                onAddressSelect(place.formatted_address);
-              }
-            }
-          }
-        }
-      );
-      setShowPredictions(false);
-      isUserTyping.current = false;
-    },
-    [map, onAddressSelect]
-  );
-
-  // Function to update address from coordinates
-  const updateAddressFromCoordinates = useCallback(
-    (lat: number, lng: number) => {
-      if (isUpdatingAddress || isUserTyping.current) return;
-      setIsUpdatingAddress(true);
-
-      const geocoder = new google.maps.Geocoder();
-      geocoder.geocode({ location: { lat, lng } }, (results, status) => {
-        if (status === "OK" && results?.[0]) {
-          const address = results[0].formatted_address;
-          setSearchValue(address);
-          const details = parseAddressComponents(results);
-          onAddressSelect(address, details);
-        }
-        setIsUpdatingAddress(false);
-      });
-    },
-    [isUpdatingAddress, onAddressSelect]
-  );
-
-  // Handle input blur
-  const handleInputBlur = useCallback(() => {
-    // Small delay to allow for prediction selection
-    setTimeout(() => {
-      isUserTyping.current = false;
-    }, 200);
-  }, []);
-
-  if (loadError) {
-    return (
-      <div className="h-80 md:h-96 flex items-center justify-center bg-gray-100">
-        <p className="text-red-500">Error loading maps</p>
-      </div>
-    );
-  }
-
-  if (!isLoaded || isLocating) {
-    return (
-      <div className="h-80 md:h-96 flex items-center justify-center bg-gray-100">
-        <p>{isLocating ? "Localizando tu ubicación..." : "Loading maps..."}</p>
-      </div>
-    );
-  }
-
   return (
-    <div className="relative h-[50vh] w-full">
-      {/* Map Container */}
-      <div className="h-80 md:h-96 relative overflow-hidden">
-        <GoogleMap
-          mapContainerStyle={mapContainerStyle}
-          center={center}
-          zoom={17}
-          onLoad={onLoad}
-          options={{
-            zoomControl: true,
-            streetViewControl: false,
-            mapTypeControl: false,
-            fullscreenControl: false,
-            gestureHandling: "greedy",
-          }}
-        >
-          {/* Center Marker */}
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-full pointer-events-none z-50">
-            <img
-              src="/assets/icons/Map-pin.svg"
-              alt="Map Pin"
-              className="h-9 w-9"
-            />
-          </div>
-        </GoogleMap>
-
-        {/* Search Bar Overlay */}
-        <div className="absolute top-4 left-4 right-4 z-10">
-          <div className="relative">
-            <Input
-              type="text"
-              placeholder="Buscar dirección..."
-              value={searchValue}
-              onChange={(e) => handleSearchChange(e.target.value)}
-              onBlur={handleInputBlur}
-              className="w-full pl-10 pr-4 py-2 bg-white rounded-lg shadow-md"
-            />
+    <Card className="w-full">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <MapPin className="h-5 w-5 text-red-600" />
+          Selecciona tu ubicación
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {/* Search Bar */}
+        <div className="flex gap-2">
+          <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-            {searchValue && (
-              <button
-                onClick={() => {
-                  setSearchValue("");
-                  setPredictions([]);
-                  setShowPredictions(false);
-                }}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            )}
+            <Input
+              ref={inputRef}
+              type="text"
+              placeholder="Busca tu dirección..."
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              className="pl-10"
+            />
           </div>
-
-          {/* Predictions Dropdown */}
-          {showPredictions && !isDragging && predictions.length > 0 && (
-            <div className="absolute w-full mt-1 bg-white rounded-lg shadow-lg max-h-60 overflow-y-auto z-20">
-              {predictions.map((prediction) => (
-                <button
-                  key={prediction.place_id}
-                  onClick={() => handlePredictionSelect(prediction)}
-                  className="w-full px-4 py-2 text-left hover:bg-gray-100 text-sm"
-                >
-                  {prediction.description}
-                </button>
-              ))}
-            </div>
-          )}
+          <Button onClick={handleSearch} variant="outline">
+            Buscar
+          </Button>
         </div>
-      </div>
 
-      {/* Warning Banner */}
-      <div className="bg-red-600 text-white px-4 py-3">
-        <div className="container mx-auto flex items-center space-x-3">
-          <MapPin className="h-5 w-5 flex-shrink-0" />
-          <p className="text-sm font-medium">
-            Ingresa tu dirección o mueve el mapa para señalar tu ubicación
-            exacta
-          </p>
+        {/* Current Location Button */}
+        <Button
+          onClick={handleUseCurrentLocation}
+          disabled={isLoading}
+          variant="outline"
+          className="w-full"
+        >
+          {isLoading ? "Obteniendo ubicación..." : "Usar mi ubicación actual"}
+        </Button>
+
+        {/* Map */}
+        <div
+          ref={mapRef}
+          className="w-full h-64 rounded-lg border"
+          style={{ minHeight: "256px" }}
+        />
+
+        {/* Google Attribution */}
+        <div className="text-xs text-gray-500 text-center">
+          Powered by Google Maps
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }
