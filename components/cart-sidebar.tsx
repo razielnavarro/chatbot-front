@@ -9,6 +9,7 @@ import { X, ShoppingCart, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { config } from "@/lib/config";
 import type { CartItem } from "@/app/page";
+import { useSession } from "@/src/contexts/SessionContext";
 
 interface CartSidebarProps {
   isOpen: boolean;
@@ -33,6 +34,7 @@ export function CartSidebar({
 }: CartSidebarProps) {
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const { toast } = useToast();
+  const { session } = useSession();
 
   const deliveryFee = 1.5;
   const total = totalPrice + deliveryFee;
@@ -42,6 +44,15 @@ export function CartSidebar({
       toast({
         title: "Carrito vacío",
         description: "Agrega algunos items antes de continuar",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!session?.token) {
+      toast({
+        title: "Error de sesión",
+        description: "No se pudo identificar tu sesión. Recarga la página.",
         variant: "destructive",
       });
       return;
@@ -59,6 +70,7 @@ export function CartSidebar({
         subtotal: totalPrice,
         deliveryFee,
         total,
+        sessionToken: session.token,
       };
 
       const response = await fetch(`${config.apiUrl}/api/orders`, {
