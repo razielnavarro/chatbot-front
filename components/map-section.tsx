@@ -30,6 +30,10 @@ interface MapSectionProps {
       calle?: string;
       zona?: string;
       numero?: string;
+    },
+    coordinates?: {
+      lat: number;
+      lng: number;
     }
   ) => void;
 }
@@ -234,9 +238,9 @@ export function MapSection({
                     types: [],
                   },
                 ]);
-                onAddressSelect(place.formatted_address, details);
+                onAddressSelect(place.formatted_address, details, newPos);
               } else {
-                onAddressSelect(place.formatted_address);
+                onAddressSelect(place.formatted_address, undefined, newPos);
               }
             }
           }
@@ -260,7 +264,7 @@ export function MapSection({
           const address = results[0].formatted_address;
           setSearchValue(address);
           const details = parseAddressComponents(results);
-          onAddressSelect(address, details);
+          onAddressSelect(address, details, { lat, lng });
         }
         setIsUpdatingAddress(false);
       });

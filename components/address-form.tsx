@@ -23,12 +23,14 @@ interface AddressFormProps {
   formData: AddressFormData;
   setFormData: (data: AddressFormData) => void;
   onSubmit: (data: AddressFormData) => void;
+  isSubmitting?: boolean;
 }
 
 export function AddressForm({
   formData,
   setFormData,
   onSubmit,
+  isSubmitting = false,
 }: AddressFormProps) {
   const [autoFilledFields, setAutoFilledFields] = useState<Set<string>>(
     new Set()
@@ -129,8 +131,9 @@ export function AddressForm({
             <Button
               type="submit"
               className="w-full bg-red-600 hover:bg-red-700 text-white text-sm py-2"
+              disabled={isSubmitting}
             >
-              CONFIRMAR DIRECCIÓN
+              {isSubmitting ? "ENVIANDO..." : "CONFIRMAR DIRECCIÓN"}
             </Button>
           </form>
         </CardContent>
