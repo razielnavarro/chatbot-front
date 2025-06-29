@@ -38,6 +38,7 @@ export default function MenuPageClient() {
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const searchParams = useSearchParams();
   const orderId = searchParams.get("order_id");
+  const resumeUrl = searchParams.get("resumeUrl");
 
   const showAddedToast = () => {
     setShowToast(true);
@@ -152,6 +153,7 @@ export default function MenuPageClient() {
         source: "whatsapp_ordering_system",
       };
       const endpoint =
+        resumeUrl ||
         process.env.NEXT_PUBLIC_N8N_MENU_WEBHOOK_URL ||
         "https://your-n8n-instance.com/webhook/menu-checkout";
       const response = await fetch(endpoint, {

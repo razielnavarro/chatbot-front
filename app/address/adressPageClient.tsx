@@ -28,6 +28,7 @@ const defaultAddressDetails: AddressDetails = {
 export default function AddressPageClient() {
   const searchParams = useSearchParams();
   const orderId = searchParams.get("order_id");
+  const resumeUrl = searchParams.get("resumeUrl");
   const [selectedAddress, setSelectedAddress] = useState("");
   const [formData, setFormData] = useState<AddressDetails>(
     defaultAddressDetails
@@ -79,10 +80,11 @@ export default function AddressPageClient() {
         },
         source: "whatsapp_ordering_system",
       };
-      const n8nWebhookUrl =
+      const endpoint =
+        resumeUrl ||
         process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL ||
         "https://your-n8n-instance.com/webhook/address-confirmation";
-      const response = await fetch(n8nWebhookUrl, {
+      const response = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
