@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import type { MenuItem } from "@/app/page";
+import type { MenuItem } from "@/app/menuPageClient";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { ShoppingCart } from "lucide-react";

@@ -1,4 +1,4 @@
-import type { CartItem } from "@/app/page";
+import type { CartItem } from "@/app/menuPageClient";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -23,6 +23,8 @@ interface CartSidebarProps {
   totalPrice: number;
   show?: boolean;
   onClose?: () => void;
+  onCheckout?: () => void;
+  isCheckingOut?: boolean;
 }
 
 export function CartSidebar({
@@ -32,6 +34,8 @@ export function CartSidebar({
   totalPrice,
   show = false,
   onClose,
+  onCheckout,
+  isCheckingOut = false,
 }: CartSidebarProps) {
   // Mobile and desktop modal/drawer
   return (
@@ -105,8 +109,10 @@ export function CartSidebar({
               <Button
                 className="w-full bg-red-600 hover:bg-red-700 text-white"
                 size="lg"
+                onClick={onCheckout}
+                disabled={isCheckingOut}
               >
-                Proceder al Pago
+                {isCheckingOut ? "Enviando..." : "Proceder al Pago"}
               </Button>
             </CardFooter>
           )}
@@ -183,8 +189,10 @@ export function CartSidebar({
               <Button
                 className="w-full bg-red-600 hover:bg-red-700 text-white"
                 size="lg"
+                onClick={onCheckout}
+                disabled={isCheckingOut}
               >
-                Proceder al Pago
+                {isCheckingOut ? "Enviando..." : "Proceder al Pago"}
               </Button>
             </CardFooter>
           )}
@@ -241,8 +249,10 @@ export function CartSidebar({
               <Button
                 className="w-full bg-red-600 hover:bg-red-700 text-white"
                 size="lg"
+                onClick={onCheckout}
+                disabled={isCheckingOut}
               >
-                Proceder al Pago
+                {isCheckingOut ? "Enviando..." : "Proceder al Pago"}
               </Button>
             </CardFooter>
           )}
