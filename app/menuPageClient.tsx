@@ -418,7 +418,7 @@ export default function MenuPageClient() {
                 <button
                   key={price.label}
                   onClick={() => handleFlavorSelection(price.label)}
-                  className="w-full bg-blue-600 text-white py-3 px-4 rounded hover:bg-blue-700 flex justify-between items-center"
+                  className="w-full bg-red-600 text-white py-3 px-4 rounded hover:bg-red-700 flex justify-between items-center"
                 >
                   <span>{price.label}</span>
                   <span>${price.value.toFixed(2)}</span>
