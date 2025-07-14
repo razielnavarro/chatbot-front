@@ -30,9 +30,6 @@ export default function AddressPageClient() {
   const orderId = searchParams.get("order_id");
   const resumeUrl = searchParams.get("resumeUrl");
   const [selectedAddress, setSelectedAddress] = useState("");
-  const [formData, setFormData] = useState<AddressDetails>(
-    defaultAddressDetails
-  );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [coordinates, setCoordinates] = useState<{
     lat: number;
@@ -57,27 +54,17 @@ export default function AddressPageClient() {
     if (coords) {
       setCoordinates(coords);
     }
-    setFormData((prevData) => ({
-      ...prevData,
-      provincia: details?.provincia || prevData.provincia,
-      distrito: details?.distrito || prevData.distrito,
-      calle: details?.calle || prevData.calle,
-      zona: details?.zona || prevData.zona,
-      numero: details?.numero || prevData.numero,
-    }));
   };
 
-  const sendAddressToN8N = async (data: AddressDetails) => {
+  const sendAddressToN8N = async () => {
+    if (!selectedAddress || !coordinates) return;
     try {
       setIsSubmitting(true);
       const payload = {
         order_id: orderId,
         fullAddress: selectedAddress,
-        addressDetails: {
-          ...data,
-          coordinates: coordinates || { lat: 0, lng: 0 },
-          timestamp: new Date().toISOString(),
-        },
+        coordinates: coordinates,
+        timestamp: new Date().toISOString(),
         source: "whatsapp_ordering_system",
       };
       const endpoint =
@@ -100,10 +87,6 @@ export default function AddressPageClient() {
     }
   };
 
-  const handleFormSubmit = async (data: AddressDetails) => {
-    await sendAddressToN8N(data);
-  };
-
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="w-full">
@@ -111,12 +94,16 @@ export default function AddressPageClient() {
           selectedAddress={selectedAddress}
           onAddressSelect={handleAddressSelect}
         />
-        <AddressForm
-          formData={formData}
-          setFormData={setFormData}
-          onSubmit={handleFormSubmit}
-          isSubmitting={isSubmitting}
-        />
+        <div className="flex flex-col items-center justify-center mt-4">
+          <button
+            type="button"
+            className="w-full max-w-md bg-red-600 hover:bg-red-700 text-white text-sm py-2 rounded disabled:opacity-50"
+            onClick={sendAddressToN8N}
+            disabled={isSubmitting || !selectedAddress || !coordinates}
+          >
+            {isSubmitting ? "ENVIANDO..." : "CONFIRMAR DIRECCIÓN"}
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -57,6 +57,10 @@ export function MapSection({
   // Use a ref to track if we should update the center
   const shouldUpdateCenter = useRef(true);
   const isUserTyping = useRef(false);
+  const idleTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const userDragged = useRef(false);
+
+  let idleTimeout: NodeJS.Timeout | null = null;
 
   const { isLoaded, loadError } = useLoadScript({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "",
@@ -128,38 +132,75 @@ export function MapSection({
     return details;
   };
 
-  const onLoad = useCallback((map: google.maps.Map) => {
-    setMap(map);
+  // Function to update address from coordinates
+  const updateAddressFromCoordinates = useCallback(
+    (lat: number, lng: number) => {
+      if (isUpdatingAddress || isUserTyping.current) return;
+      setIsUpdatingAddress(true);
 
-    // Add drag start listener
-    map.addListener("dragstart", () => {
-      setIsDragging(true);
-      setShowPredictions(false);
-    });
+      const geocoder = new google.maps.Geocoder();
+      geocoder.geocode({ location: { lat, lng } }, (results, status) => {
+        if (status === "OK" && results?.[0]) {
+          const address = results[0].formatted_address;
+          setSearchValue(address);
+          const details = parseAddressComponents(results);
+          onAddressSelect(address, details, { lat, lng });
+        }
+        setIsUpdatingAddress(false);
+      });
+    },
+    [isUpdatingAddress, onAddressSelect]
+  );
 
-    // Add drag end listener
-    map.addListener("dragend", () => {
-      setIsDragging(false);
-    });
+  // Debounced update address when map stops moving
+  const onLoad = useCallback(
+    (mapInstance: google.maps.Map) => {
+      if (!mapInstance) return;
+      setMap(mapInstance);
 
-    // Update address when map stops moving
-    map.addListener("idle", () => {
-      if (!shouldUpdateCenter.current) {
-        shouldUpdateCenter.current = true;
-        return;
-      }
+      // Add drag start listener
+      mapInstance.addListener("dragstart", () => {
+        setIsDragging(true);
+        setShowPredictions(false);
+        userDragged.current = true;
+      });
 
-      const mapCenter = map.getCenter();
-      if (mapCenter) {
-        const newCenter = {
-          lat: mapCenter.lat(),
-          lng: mapCenter.lng(),
-        };
-        setCenter(newCenter);
-        updateAddressFromCoordinates(newCenter.lat, newCenter.lng);
-      }
-    });
-  }, []);
+      // Add drag end listener
+      mapInstance.addListener("dragend", () => {
+        setIsDragging(false);
+      });
+
+      mapInstance.addListener("idle", () => {
+        if (!userDragged.current) return;
+
+        if (idleTimeoutRef.current) clearTimeout(idleTimeoutRef.current);
+
+        idleTimeoutRef.current = setTimeout(() => {
+          const mapCenter = mapInstance.getCenter();
+          if (!mapCenter) return;
+
+          const newLat = mapCenter.lat();
+          const newLng = mapCenter.lng();
+
+          const latDiff = Math.abs(center.lat - newLat);
+          const lngDiff = Math.abs(center.lng - newLng);
+
+          const THRESHOLD = 0.0001; // ~11 meters
+          const COOLDOWN_MS = 1500;
+
+          if (latDiff > THRESHOLD || lngDiff > THRESHOLD) {
+            const newCenter = { lat: newLat, lng: newLng };
+            setCenter(newCenter);
+            updateAddressFromCoordinates(newLat, newLng);
+          }
+
+          // After one call, reset drag flag to prevent more calls on idle
+          userDragged.current = false;
+        }, 1500);
+      });
+    },
+    [center.lat, center.lng, updateAddressFromCoordinates]
+  );
 
   // Handle search input changes
   const handleSearchChange = useCallback(
@@ -250,26 +291,6 @@ export function MapSection({
       isUserTyping.current = false;
     },
     [map, onAddressSelect]
-  );
-
-  // Function to update address from coordinates
-  const updateAddressFromCoordinates = useCallback(
-    (lat: number, lng: number) => {
-      if (isUpdatingAddress || isUserTyping.current) return;
-      setIsUpdatingAddress(true);
-
-      const geocoder = new google.maps.Geocoder();
-      geocoder.geocode({ location: { lat, lng } }, (results, status) => {
-        if (status === "OK" && results?.[0]) {
-          const address = results[0].formatted_address;
-          setSearchValue(address);
-          const details = parseAddressComponents(results);
-          onAddressSelect(address, details, { lat, lng });
-        }
-        setIsUpdatingAddress(false);
-      });
-    },
-    [isUpdatingAddress, onAddressSelect]
   );
 
   // Handle input blur
