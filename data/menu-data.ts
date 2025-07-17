@@ -28,7 +28,8 @@ export const menu: MenuCategory[] = [
           { label: "Sola", value: 4.5 },
           { label: "Con papas", value: 5.75 },
         ],
-        image: "/menu/hamburger.jpeg",
+        image:
+          "https://pub-b31207be229f4824971f6e8674928e73.r2.dev/burger-normal.png",
         category: "Hamburguesas",
       },
       {
@@ -39,7 +40,8 @@ export const menu: MenuCategory[] = [
           { label: "Sola", value: 5.25 },
           { label: "Con papas", value: 6.75 },
         ],
-        image: "/menu/hamburger.jpeg",
+        image:
+          "https://pub-b31207be229f4824971f6e8674928e73.r2.dev/LUIGIIS%20DE%20CARNE%20CON%20BACON.png",
         category: "Hamburguesas",
       },
       {
@@ -50,7 +52,8 @@ export const menu: MenuCategory[] = [
           { label: "Sola", value: 6.5 },
           { label: "Con papas", value: 7.75 },
         ],
-        image: "/menu/hamburger.jpeg",
+        image:
+          "https://pub-b31207be229f4824971f6e8674928e73.r2.dev/burger-normal.png",
         category: "Hamburguesas",
       },
       {
@@ -61,7 +64,8 @@ export const menu: MenuCategory[] = [
           { label: "Sola", value: 7.25 },
           { label: "Con papas", value: 8.75 },
         ],
-        image: "/menu/hamburger.jpeg",
+        image:
+          "https://pub-b31207be229f4824971f6e8674928e73.r2.dev/LUIGIIS%20DE%20CARNE%20CON%20BACON.png",
         category: "Hamburguesas",
       },
       {
@@ -72,7 +76,8 @@ export const menu: MenuCategory[] = [
           { label: "Sola", value: 5.25 },
           { label: "Con papas", value: 6.75 },
         ],
-        image: "/menu/hamburger.jpeg",
+        image:
+          "https://pub-b31207be229f4824971f6e8674928e73.r2.dev/LUIGIIS%20DE%20POLLO.png",
         category: "Hamburguesas",
       },
       {
@@ -83,7 +88,8 @@ export const menu: MenuCategory[] = [
           { label: "Sola", value: 5.75 },
           { label: "Con papas", value: 7.25 },
         ],
-        image: "/menu/hamburger.jpeg",
+        image:
+          "https://pub-b31207be229f4824971f6e8674928e73.r2.dev/LUIGIIS%20DE%20POLLO.png",
         category: "Hamburguesas",
       },
     ],
@@ -96,7 +102,8 @@ export const menu: MenuCategory[] = [
         description:
           "Papas fritas, carne molida, salchicha, salsa luigii, queso cheddar, ketchup.",
         prices: [{ label: "", value: 4.5 }],
-        image: "/menu/hamburger.jpeg",
+        image:
+          "https://pub-b31207be229f4824971f6e8674928e73.r2.dev/salchipapas.PNG",
         category: "Salchipapas",
       },
       {
@@ -104,7 +111,8 @@ export const menu: MenuCategory[] = [
         description:
           "Papas, carne molida, salchicha, queso cheddar, ketchup. Para 1 o 2 personas.",
         prices: [{ label: "", value: 7.5 }],
-        image: "/menu/hamburger.jpeg",
+        image:
+          "https://pub-b31207be229f4824971f6e8674928e73.r2.dev/salchipapas.PNG",
         category: "Salchipapas",
       },
     ],
@@ -117,7 +125,7 @@ export const menu: MenuCategory[] = [
         description:
           "6 alitas bañadas en salsa barbecue, acompañadas de papas fritas.",
         prices: [{ label: "", value: 6.0 }],
-        image: "/menu/hamburger.jpeg",
+        image: "https://pub-b31207be229f4824971f6e8674928e73.r2.dev/ALITAS.png",
         category: "Pollo",
       },
       {
@@ -125,7 +133,7 @@ export const menu: MenuCategory[] = [
         description:
           "5 deditos de pollo apanados, acompañados de papas fritas y salsa luigii.",
         prices: [{ label: "", value: 5.5 }],
-        image: "/menu/hamburger.jpeg",
+        image: "https://pub-b31207be229f4824971f6e8674928e73.r2.dev/logo.jpg",
         category: "Pollo",
       },
     ],
@@ -138,7 +146,7 @@ export const menu: MenuCategory[] = [
         description:
           "Tortilla, lechuga, carne molida, salsa luigii, pico de gallo, queso cheddar. 3 unidades.",
         prices: [{ label: "", value: 5.25 }],
-        image: "/menu/hamburger.jpeg",
+        image: "https://pub-b31207be229f4824971f6e8674928e73.r2.dev/logo.jpg",
         category: "Varios",
       },
       {
@@ -146,7 +154,8 @@ export const menu: MenuCategory[] = [
         description:
           "Tortilla, carne molida, cuatro quesos, pico de gallo y salsa luigii. 3 unidades.",
         prices: [{ label: "", value: 5.25 }],
-        image: "/menu/hamburger.jpeg",
+        image:
+          "https://pub-b31207be229f4824971f6e8674928e73.r2.dev/Quesadillas.PNG",
         category: "Varios",
       },
       {
@@ -154,7 +163,7 @@ export const menu: MenuCategory[] = [
         description:
           "Nachos con carne molida, cuatro quesos, pico de gallo, queso cheddar, salsa luigii.",
         prices: [{ label: "", value: 7.0 }],
-        image: "/menu/hamburger.jpeg",
+        image: "https://pub-b31207be229f4824971f6e8674928e73.r2.dev/nachos.PNG",
         category: "Varios",
       },
     ],
@@ -167,7 +176,7 @@ export const menu: MenuCategory[] = [
         description:
           "2 hamburguesas de carne con bacon, 2 quesadillas, 1 salchipapa, 2 sodas.",
         prices: [{ label: "", value: 18.0 }],
-        image: "/menu/hamburger.jpeg",
+        image: "https://pub-b31207be229f4824971f6e8674928e73.r2.dev/logo.jpg",
         category: "Para Compartir",
       },
     ],
@@ -183,7 +192,8 @@ export const menu: MenuCategory[] = [
           { label: "Piña", value: 2.75 },
           { label: "Melón", value: 2.75 },
         ],
-        image: "/menu/hamburger.jpeg",
+        image:
+          "https://pub-b31207be229f4824971f6e8674928e73.r2.dev/Batidos.png",
         category: "Bebidas",
       },
       {
@@ -194,21 +204,23 @@ export const menu: MenuCategory[] = [
           { label: "Piña", value: 2.5 },
           { label: "Melón", value: 2.5 },
         ],
-        image: "/menu/hamburger.jpeg",
+        image:
+          "https://pub-b31207be229f4824971f6e8674928e73.r2.dev/Licuados.png",
         category: "Bebidas",
       },
       {
         name: "SODA DE LATA",
         description: "",
         prices: [{ label: "", value: 1.25 }],
-        image: "/menu/hamburger.jpeg",
+        image: "https://pub-b31207be229f4824971f6e8674928e73.r2.dev/Soda.png",
         category: "Bebidas",
       },
       {
         name: "BOTELLA DE AGUA",
         description: "",
         prices: [{ label: "", value: 1.0 }],
-        image: "/menu/hamburger.jpeg",
+        image:
+          "https://pub-b31207be229f4824971f6e8674928e73.r2.dev/Botella-de-agua.png",
         category: "Bebidas",
       },
     ],
