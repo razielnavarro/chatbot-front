@@ -16,20 +16,28 @@ interface PromoData {
 const promoData: Record<string, PromoData> = {
   monday: {
     name: "MEGA COMBO",
-    prices: [{ label: "", value: 8.99 }],
-    description: "Hamburguesa + Papas + Bebida",
+    prices: [{ label: "", value: 5.99 }],
+    description: "Hamburguesa de pollo con bacon + Papas",
     day: "TODOS LOS LUNES",
     image:
       "https://pub-b31207be229f4824971f6e8674928e73.r2.dev/promo-monday.png",
     available: true,
   },
-  wednesday: {
+  tuesday: {
     name: "MONCHI-PAPAS",
     prices: [{ label: "", value: 5.99 }],
     description: "Papas cargadas con queso, bacon y salsa especial",
-    day: "TODOS LOS MIÉRCOLES",
+    day: "TODOS LOS MARTES",
     image:
       "https://pub-b31207be229f4824971f6e8674928e73.r2.dev/promo-wednesdays.png",
+    available: true,
+  },
+  wednesday: {
+    name: "DOBLE CARNE",
+    prices: [{ label: "", value: 4.99 }],
+    description: "Hamburguesa doble carne",
+    day: "TODOS LOS MIÉRCOLES",
+    image: "https://pub-b31207be229f4824971f6e8674928e73.r2.dev/wednesday.PNG",
     available: true,
   },
 };
