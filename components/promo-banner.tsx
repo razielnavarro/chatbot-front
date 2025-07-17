@@ -48,6 +48,15 @@ export default function PromoBanner({
   const [currentPromoIndex, setCurrentPromoIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
+  const [serverDay, setServerDay] = useState<number | null>(null);
+
+  // Fetch server day on mount
+  useEffect(() => {
+    fetch("/api/promo-day")
+      .then((res) => res.json())
+      .then((data) => setServerDay(data.day))
+      .catch(() => setServerDay(null));
+  }, []);
 
   const promoKeys = Object.keys(promoData);
   const activePromo = promoData[promoKeys[currentPromoIndex]];
@@ -68,13 +77,13 @@ export default function PromoBanner({
     return () => clearInterval(interval);
   }, [promoKeys.length, isPaused]);
 
-  // Check if current promo is available today
+  // Check if current promo is available today (server-side)
   const isToday = () => {
-    const today = new Date().getDay();
+    if (serverDay === null) return false;
     const currentKey = promoKeys[currentPromoIndex];
     return (
-      (currentKey === "monday" && today === 1) ||
-      (currentKey === "wednesday" && today === 3)
+      (currentKey === "monday" && serverDay === 1) ||
+      (currentKey === "wednesday" && serverDay === 3)
     );
   };
 
